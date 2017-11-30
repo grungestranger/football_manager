@@ -1,0 +1,460 @@
+<?php
+
+namespace App;
+
+class Player {
+
+ 	// ID
+ 	public $id;
+ 
+ 	// Сторона (команда)
+ 	public $side;
+ 
+ 	// Установки игрока
+ 	public $setting;
+
+	// Характеристики игрока
+	public $data;
+
+	// Значения во время матча
+	public $value;
+
+	public $valArr = [];
+
+	// Массив - координаты точки, куда двигаться, и скорость.
+	public $target;
+
+
+	public function __construct($data)
+	{
+ 		$this->id = $data['player_id'];
+ 
+ 		$this->data = $data['player'];
+ 
+ 		$this->setting = json_decode($data['setting'], TRUE);
+
+		// side
+		if ($data['user_id'] == Match::$data['user1_id']) {
+			$this->side = 'l';
+		} else {
+			$this->side = 'r';
+		}
+
+		// current position
+		$this->setting['pos'] = $this->setting['position'];
+		if ($this->side == 'r') {
+			$this->setting['pos']['x'] = Match::$data['field']['w'] - $this->setting['pos']['x'];
+			$this->setting['pos']['y'] = Match::$data['field']['h'] - $this->setting['pos']['y'];
+		}
+
+		// values
+		if (Match::$la) {
+			$this->value = Match::$la[$this->id];
+		}
+	}
+
+	public function do_action()
+	{
+		if (Match::$event) {
+			$this->go_to_event();
+		} else {
+			$this->logic();
+			$this->go_to();
+		}
+
+		return $this->value;
+	}
+
+	public function go_to()
+	{
+		// TODO Можно при stop < ms_min делать не "растягивание времени", а пробегание игроком лишнего расстояния.
+
+		$this->valArr = []; // Очищаем от предыдущего
+
+		if (Match::$stop) {
+			$time = min(Match::$stop);
+		} else {
+			$time = Match::$ms_max;
+		}
+
+		$x = $this->value['x'];
+		$y = $this->value['y'];
+		$s = $this->value['s'];
+		$d = $this->value['d'];
+		$speed = $this->data['speed'];
+		$acceleration = $this->data['acceleration'];
+		$coordination = $this->data['coordination'];
+
+		if ($this->target) {
+			$tx = $this->target['x'];
+			$ty = $this->target['y'];
+			$ts = isset($this->target['s']) ? $this->target['s'] : NULL;
+			$this->target = NULL;
+		} else {
+			$point = Match::point($x, $y, $d, 100);
+			$tx = $point['x'];
+			$ty = $point['y'];
+			$ts = 0;
+		}
+
+		$dt = Match::$dt;
+
+		for ($ms = 0; $ms <= $time; $ms += $dt) {
+			if ($ms) {
+				$s_max = $s + $acceleration * $dt / 2500;
+				if ($s_max > $speed) {
+					$s_max = $speed;
+				}
+				$s_min = $s - $coordination * $dt / 2500;
+				if ($s_min < 0) {
+					$s_min = 0;
+				}
+				if ($ts === NULL || $ts > $s_max) {
+					$ns = $s_max;
+				} elseif ($ts < $s_min) {
+					$ns = $s_min;
+				} else {
+					$ns = $ts;
+				}
+
+				$nd = Match::direction($x, $y, $tx, $ty); // $d === FALSE не может быть
+
+				// dd - разница направлений
+				$dd = Match::dd($d, $nd);
+
+				if ($dd) {
+					$s_for_dd = abs($coordination * $dt / $dd / 20);
+
+					if ($s_for_dd < $ns) {
+						if ($s_for_dd >= $s_min) {
+							$ns = $s_for_dd;
+						} else {
+							$ns = $s_min;
+							$dd_for_s = $coordination * $dt / $ns / 20;
+							$nd = Match::d_norm($d + sign($dd) * $dd_for_s);
+						}
+					}
+				}
+
+				$point = Match::point($x, $y, $nd, $ns / 1000 * $dt);
+
+				$x = $point['x'];
+				$y = $point['y'];
+				$d = $nd;
+				$s = round($ns, 2);
+			}
+			$this->valArr[$ms] = $value = [
+				'x' => $x,
+				'y' => $y,
+				'd' => $d,
+				's' => $s,
+			];
+			if (Match::distance($x, $y, $tx, $ty) < 1) {
+				Match::$stop[] = $ms >= Match::$ms_min ? $ms : Match::$ms_min;
+				break;
+			}
+			if ($s == 0 && $ts === 0) {
+				break;
+			}
+		}
+		$this->value = $value;
+	}
+
+	public function go_to_event()
+	{
+		switch (Match::$event['name']) {
+			case 'first_half':
+				if ($this->side == 'l') {
+					$d = 0;
+					$x = $this->setting['pos']['x'] / 2;
+				} else {
+					$d = 180;
+					$x = $this->setting['pos']['x'] + (Match::$data['field']['w'] - $this->setting['pos']['x']) / 2;
+				}
+				$this->value = [
+					'x' => $x,
+					'y' => $this->setting['pos']['y'],
+					'd' => $d,
+					's' => 0,
+				];
+				break;
+		}
+		// считаем, что все значения правильно округлены, либо округляем тут
+	}
+
+	// Ближайший игрок своей команды
+	public function nearest_player()
+	{
+		$x = $this->value['x'];
+		$y = $this->value['y'];
+
+		$distances = [];
+
+		foreach (Match::$players as $k => $v) {
+			if ($v->side == $this->side && $k != $this->id) {
+				$distances[$k] = $this->get_distance(Match::$la[$k]['x'], Match::$la[$k]['y']);
+			}
+		}
+
+		$players = array_keys($distances, min($distances));
+
+		return $players[0];
+	}
+
+	public function ballToPlayer($px, $py, $bx, $by, $ps, $bs, $pd)
+	{
+		$di = Match::$di; // расстояние взаимодействия
+		$dt = 10; // ms
+
+		for ($ms = 0; ; $ms += $dt) {
+			$playerPoint = Match::point($px, $py, $pd, $ps * $ms / 1000);
+			$ballDistance = Match::ball_move_distance($bs, $ms);
+			$distance = Match::distance($playerPoint['x'], $playerPoint['y'], $bx, $by) - $ballDistance;
+			if ($distance <= $di) {
+				return $playerPoint;
+			} elseif ($ms && ($distance >= $prevDistance || $ballDistance == $prevBallDistance)) {
+				// TODO проверить, может ли после $distance == $prevDistance быть снова уменьшение дистанции
+				return FALSE;
+			}
+			$prevDistance = $distance;
+			$prevBallDistance = $ballDistance;
+		}
+	}
+
+	public function playerToBall($px, $py, $bx, $by, $ps, $bs, $bd) // TODO Переделать
+	{
+		$di = Match::$di; // расстояние взаимодействия
+		$dt = 10; // ms
+		$maxMs = 2000;
+
+		for ($ms = 0; $ms <= $maxMs; $ms += $dt) {
+			$playerDistance = $ms * $ps;
+			$ballDistance = Match::ball_move_distance($bs, $ms);
+			$ballPoint = Match::point($bx, $by, $bd, $ballDistance);
+			$distance = Match::distance($ballPoint['x'], $ballPoint['y'], $px, $py) - $playerDistance;
+			if ($distance <= $di) {
+				return $ballPoint;
+			}
+			if ($ms && $ps == 0) {
+				return FALSE;
+			}
+		}
+		return $ballPoint;
+	}
+
+	// Пас в ноги, если $passOnGo == FALSE
+	public function pass($id, $power = NULL, $passOnGo = FALSE)
+	{
+		$accuracy = $this->data['accuracy'];
+		$vision = $this->data['vision'];
+
+		$power = $this->correct_skill('power', $power);
+
+		$s = $power * Match::$power_to_ball_speed;
+
+		$ball = Match::$la[0];
+		$tp = Match::$la[$id]; // target player
+
+		$distance = Match::distance($ball['x'], $ball['y'], $tp['x'], $tp['y']);
+
+		if ($passOnGo) {
+			$tpSpeed = Match::$players[$id]->data['speed'];
+			// Можно брать значение не точно, либо 100
+		} else {
+			$v1 = $distance - 100;
+			if ($v1 < 0) {
+				$v1 = 0;
+			} elseif ($v1 > 900) {
+				$v1 = 900;
+			}
+			$k = 1 - $v1 / 900;
+			$tpSpeed = $k * $tp['s'];
+			// Тут корреляция от дистанции
+			// Если целевой игрок близко - пас на ход с текущей скоростью
+			// Если далеко - то пас в то место, где он находится в данный момент
+		}
+
+		if ($tpSpeed) {
+			$target = $this->ballToPlayer($tp['x'], $tp['y'], $ball['x'], $ball['y'], $tpSpeed, $s, $tp['d']);
+		} else {
+			$target = FALSE;
+		}
+
+		if ($target === FALSE) {
+			// Пусть, при недолете мяча до цели, он просто бьет в направлении цели. Плевать!
+			$target = ['x' => $tp['x'], 'y' => $tp['y']];
+		}
+
+		$d = Match::direction($ball['x'], $ball['y'], $target['x'], $target['y']);
+
+		// Создаем отклонение от точности
+		$l = intval(200 - $accuracy - $vision + sqrt($distance)) / 10;
+
+		$d = Match::d_norm($d + rand(-$l, $l));
+
+		Match::$ball[$this->id] = [
+			's' => $s,
+			'd' => $d,
+		];
+	}
+
+	// Пас на ход
+	// (Пас в точку, куда попадет игрок двигаясь в текущем направлении со своей максимальной скоростью)
+	public function passOnGo($id, $power = NULL)
+	{
+		$this->pass($id, $power, TRUE);
+	}
+
+	public function kick($x, $y, $power = NULL)
+	{
+
+	}
+
+	// Расстояние от игрока до точки
+	public function get_distance($tx, $ty)
+	{
+		$x = $this->value['x'];
+		$y = $this->value['y'];
+
+		return Match::distance($x, $y, $tx, $ty);
+	}
+
+	public function correct_skill($name, $value)
+	{
+		$value_max = $this->data[$name];
+		if ($value === NULL || $value > $value_max) {
+			$value = $value_max;
+		} elseif ($value < 0) {
+			$value = 0;
+		}
+
+		return $value;
+	}
+
+	public function toBall($speed = NULL) // TODO Переделать
+	{
+		$ball = Match::$la[0];
+		if ($speed = $this->correct_skill('speed', $speed)) {
+			$this->target = $this->playerToBall($this->value['x'], $this->value['y'], $ball['x'], $ball['y'], $speed, $ball['s'], $ball['d']);
+		} else {
+			$this->target = [$ball['x'], $ball['y']];
+		}
+	}
+
+	public function logic()
+	{
+		$x = $this->value['x'];
+		$y = $this->value['y'];
+
+		$ball = Match::$la[0];
+
+		// Мяч на расстоянии взаимодействия
+		if ($this->get_distance($ball['x'], $ball['y']) <= Match::$di) {
+			$ballContact = TRUE;
+		} else {
+			$ballContact = FALSE;
+		}
+
+		$gyes = array_keys(Match::$players);
+		unset($gyes[array_search($this->id, $gyes)]);
+
+		$pl = $gyes[array_rand($gyes)];
+
+
+		if ($ballContact) {
+			//$this->pass($pl);
+			$this->pass($this->nearest_player());
+		}
+
+		$dist = [];
+		foreach (Match::$players as $key => $value) {
+			$dist[$key] = Match::distance($ball['x'], $ball['y'], Match::$la[$key]['x'], Match::$la[$key]['y']);
+		}
+
+		$min = min($dist);
+
+		$min_pl = array_search($min, $dist);
+
+		if ($this->id == 1) {
+			if (Match::distance(250, 450, $x, $y) > 5) {
+				$this->target = ['x' => 250, 'y' => 450];
+			}
+		} elseif ($this->id == 2) {
+			if (Match::distance(250, 150, $x, $y) > 5) {
+				$this->target = ['x' => 250, 'y' => 150];
+			}
+		} elseif ($this->id == 3) {
+			if (Match::distance(750, 450, $x, $y) > 5) {
+				$this->target = ['x' => 750, 'y' => 450];
+			}
+		} else {
+			if (Match::distance(750, 150, $x, $y) > 5) {
+				$this->target = ['x' => 750, 'y' => 150];
+			}
+		}
+
+		//$this->target = ['x' => $tx, 'y' => $ty];
+
+	}
+
+	// Предсказать позицию игрока ($id) через определенное время ($ms), основываясь на текущих позиции, скорости и направлении.
+	/*public function predict_pos($id, $ms)
+	{
+		$vision = $this->data['vision'];
+
+		$way = Match::$la[$id]['s'] * $ms / 1000;
+		$point = Match::point(Match::$la[$id]['x'], Match::$la[$id]['y'], Match::$la[$id]['d'], $way);
+
+		$distance = $this->get_distance(Match::$la[$id]['x'], Match::$la[$id]['y']);
+		$l = intval((100 - $vision + sqrt($distance)) / 3);
+
+		$x = $point['x'] + rand(-$l, $l);
+		$y = $point['y'] + rand(-$l, $l);
+
+		return ['x' => $x, 'y' => $y];
+	}*/
+
+	/*public function estimate_distance($tx, $ty)
+	{
+		$vision = $this->data['vision'];
+
+		$distance = $this->get_distance($tx, $ty);
+		$l = intval(100 - $vision + sqrt($distance));
+		$res = $distance + rand(-$l, $l);
+		if ($res < 0) {
+			$res = 0;
+		}
+		return $res;
+	}*/
+
+	/*public function get_ball_move_time($distance, $power = NULL) // ms
+	{
+		$power = $this->correct_skill('power', $power);
+
+		$s = $power * Match::$power_to_ball_speed;
+
+		return Match::ball_move_time($distance, $s);
+	}*/
+
+	/*public function estimate_ball_move_time($distance, $power = NULL) // ms
+	{
+		$vision = $this->data['vision'];
+
+		$ball_move_time = $this->get_ball_move_time($distance, $power);
+
+		if ($ball_move_time !== FALSE) {
+			$l = intval(100 - $vision + sqrt($distance)) * 10;
+			$res = $ball_move_time + rand(-$l, $l);
+			if ($res < 0) {
+				$res = 0;
+			}
+		} else { // Достаточно херово, но... Плевать!
+			$l = 2 - round($vision / 100, 2);
+			$power = $this->correct_skill('power', $power) * $l;
+			$s = $power * Match::$power_to_ball_speed;
+			$res = Match::ball_move_time($distance, $s);
+		}
+
+		return $res;
+	}*/
+}
