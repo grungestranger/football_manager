@@ -22,7 +22,7 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::get('/home', 'HomeController@index');
 	Route::get('/team', 'TeamController@index');
 	Route::post('/team/save', 'TeamController@save');
-	Route::post('/team/save-as', 'TeamController@save_as');
+	Route::post('/team/save-as', 'TeamController@saveAs');
 	Route::controller('/match', 'MatchController');
 	Route::get('/check-request', 'AjaxController@checkRequest');
 });

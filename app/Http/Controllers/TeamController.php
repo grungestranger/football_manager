@@ -18,16 +18,16 @@ class TeamController extends Controller
     {
         // if $request->input('setting_id', 1) ...
         $settings = $this->user->settings;
-        foreach ($settings as &$item) {
+        foreach ($settings as $item) {
             $item->settings = json_decode($item->text);
         }
-        unset($item);
+
         $players = PlayerModel::getTeam($settings[0]->id);
 
         $data = [
             'settings' => $settings,
             'players' => $players,
-            'tactics' => SettingsModel::$tactics,
+            'options' => SettingsModel::getOptions(),
         ];
 
         return view('team', $data);

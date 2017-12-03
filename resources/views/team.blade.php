@@ -3,6 +3,7 @@
 @section('content')
 <table id="players">
     <tr>
+        <th>#</th>
         <th>Игрок</th>
         <th>Поз.</th>
         <th>Скор.</th>
@@ -17,6 +18,7 @@
     </tr>
     @foreach ($players as $item)
     <tr>
+        <td>{{ $item->id }}</td>
         <td>{{ $item->name }}</td>
         <td>{{ implode(', ', $item->roles) }}</td>
         <td>{{ $item->speed }}</td>
@@ -38,12 +40,12 @@
             <option value="{{ $item->id }}">{{ $item->name }}</option>
         @endforeach
         </select>
-        <a id="save_tactic" href="#">Сохранить</a>
-        <a id="save_as_tactic" href="#">Сохранить как</a>
+        <a id="save_settings" href="#">Сохранить</a>
+        <a id="save_as_settings" href="#">Сохранить как</a>
     </div>
     Тактика: 
-    <select id="tactics">
-    @foreach ($tactics as $item)
+    <select id="tactic">
+    @foreach ($options['tactic'] as $item)
         <option value="{{ $item }}"{!! $settings[0]->settings->tactic == $item ? ' selected' : '' !!}>{{ $item }}</option>
     @endforeach
     </select>
@@ -55,11 +57,11 @@
         @endforeach
     </div>
 </div>
-<div class="popup" id="save_as_tactic_block">
+<div class="popup" id="save_as_settings_block">
     <div class="popup_content">
         Название:
         <input type="text">
-        <a id="save_as_tactic_save" href="#">Сохранить</a>
+        <a id="save_as_settings_save" href="#">Сохранить</a>
     </div>
 </div>
 @endsection
@@ -69,5 +71,6 @@
 @endsection
 
 @section('js')
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <script src="{{ url('js/team.js') }}"></script>
 @endsection

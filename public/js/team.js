@@ -1,20 +1,55 @@
 $(document).ready(function(){
 
-	var fieldCoefficient = 0.5;
+	var fieldCoef = 0.5;
 
 	$('.player').each(function(){
 		$(this).css({
-			left: ($(this).data('pos_x') * fieldCoefficient) + 'px',
-			bottom: ($(this).data('pos_y') * fieldCoefficient) + 'px'
+			left: ($(this).data('pos_x') * fieldCoef) + 'px',
+			bottom: ($(this).data('pos_y') * fieldCoef) + 'px'
 		});
 	});
 
-	$('#tactics').change(function(){
-		$('#save_tactic').show();
+	$('#tactic').change(function(){
+		$('#save_settings').show();
 	});
 
-	$('#save_as_tactic').click(function(){
-		$('#save_as_tactic_block').show();
+	$('#save_as_settings').click(function(){
+		$('#save_as_settings_block').show();
+	});
+
+	//
+	$('.player').draggable({
+		containment: "parent",
+		stop: function(e, ui) {
+			$('#save_settings').show();
+			$(this).data({
+				pos_x: Math.round(ui.position.left / fieldCoef),
+				pos_y: Math.round(ui.position.top / fieldCoef)
+			});
+		}
+	});
+
+	// save settings
+	$('#save_settings').click(function(){
+		$.ajax({  
+			type: 'POST', 				
+			url: '/team/save',
+			data: {
+				data: JSON.stringify({
+					settings: {
+						id: $('#settings').val(),
+						tactic: $('#tactic').val()
+					}
+				})
+			},
+			success: function(data) {
+				if (data.success) {
+					alert('Успешно.');
+				} else {
+					alert('error');
+				}
+			}
+		});
 	});
 
 });

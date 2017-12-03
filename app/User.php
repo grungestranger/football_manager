@@ -26,25 +26,18 @@ class User extends Authenticatable
         'password', 'remember_token',
     ];
 
-    public function settings()
-    {
-        return $this->hasMany('App\SettingsModel')->orderBy('id');
-    }
-
-    /**
-     * Redefine create method - add creating default settings
-     */
-    public static function create(array $attributes = [])
-    {
-        $user = parent::create($attributes);
-        SettingsModel::createDefault($user->id);
-        return $user;
-    }
-
     /**
      * onlineTime sec.
      */
     protected static $onlineTime = 600;
+
+    /**
+     * Settings
+     */
+    public function settings()
+    {
+        return $this->hasMany('App\SettingsModel')->orderBy('id');
+    }
 
     /**
      * Select all confirmed users
@@ -54,6 +47,6 @@ class User extends Authenticatable
         $rawString = 'IF(type = \'bot\' OR NOW() - last_active_at <= '
             . self::$onlineTime . ', 1, 0) as online';
         return self::select('*', DB::raw($rawString))
-            ->where(['confirmed' => 1])->get()->toArray();
+            ->where(['confirmed' => 1])->get();
     }
 }

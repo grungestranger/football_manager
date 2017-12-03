@@ -9,9 +9,4 @@ class StatsModel extends Model
 	protected $table = 'stats';
 
     public $timestamps = false;
-
-	/*public function player()
-	{
-		return $this->belongsTo('App\PlayerModel');
-	}*/
 }

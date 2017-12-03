@@ -22,11 +22,6 @@ class PlayerModel extends Model
         'power', 'accuracy', 'vision', 'reaction', 'in_gate', 'on_out',
     ];
 
-    /*public function user()
-    {
-        return $this->belongsTo('App\User');
-    }*/
-
     /**
      * Coordinates of areas of roles on a field
      */
@@ -86,87 +81,8 @@ class PlayerModel extends Model
     ];
 
     /**
-     * Select all players by team with specific settings
+     * Add roles' max count
      */
-    public static function getTeam($settingId)
-    {
-        $rawRolesIds = 'GROUP_CONCAT(roles.id ORDER BY roles.id) AS roles_ids';
-        $rawRolesNames = 'GROUP_CONCAT(roles.name ORDER BY roles.id) AS roles_names';
-        $arr = DB::table('players_settings')
-            ->select(
-                'players.*',
-                'players_settings.text AS settings',
-                DB::raw($rawRolesIds),
-                DB::raw($rawRolesNames)
-            )
-            ->leftJoin('players', 'players.id', '=', 'players_settings.player_id')
-            ->leftJoin('players_roles', 'players_roles.player_id', '=', 'players.id')
-            ->leftJoin('roles', 'roles.id', '=', 'players_roles.role_id')
-            ->where(['setting_id' => $settingId])
-            ->groupBy('players.id')->get();
-
-        $result = [];
-        $temp = [];
-
-        foreach ($arr as &$item) {
-            $item->settings = json_decode($item->settings);
-            $item->roles = array_combine(explode(',', $item->roles_ids), explode(',', $item->roles_names));
-            unset($item->roles_ids, $item->roles_names);
-
-            if ($item->settings->position) {
-                foreach (array_values(self::$rolesAreas) as $k => $v) {
-                    if (
-                        $item->settings->position->x >= $v['x'][0]
-                        && $item->settings->position->x < $v['x'][1]
-                        && $item->settings->position->y >= $v['y'][0]
-                        && $item->settings->position->y < $v['y'][1]
-                    ) {
-                        $temp[$k][] = $item;
-                        break;
-                    }
-                }
-            } else {
-                $result[11 + $item->settings->reserveIndex] = $item;
-            }
-        }
-        unset($item);
-
-        foreach ($temp as &$item) {
-            if (count($item) > 1) {
-                usort($item, function ($a, $b) {
-                    if ($a->settings->position->y > $b->settings->position->y) {
-                        return 1;
-                    } elseif ($a->settings->position->y < $b->settings->position->y) {
-                        return -1;
-                    } else {
-                        if ($a->settings->position->x < $b->settings->position->x) {
-                            return 1;
-                        } elseif ($a->settings->position->x > $b->settings->position->x) {
-                            return -1;
-                        } else {
-                            return 0;
-                        }
-                    }
-                });
-            }
-        }
-        unset($item);
-         
-        ksort($temp);
-
-        $i = 0;
-        foreach ($temp as $item) {
-            foreach ($item as $item1) {
-                $result[$i] = $item1;
-                $i++;
-            }
-        }
-         
-        ksort($result);
-
-        return $result;
-    }
-
     private static $addRoleMaxCount = 1;
 
     /**
@@ -432,10 +348,13 @@ class PlayerModel extends Model
         ],
     ];
 
+    /**
+     * Create team
+     */
     public static function createTeam($user_id)
     {
         // user's default setting
-        $setting_id = DB::table('settings')->where(['user_id' => $user_id])->first()->id;
+        $setting_id = SettingsModel::createDefault($user_id)->id;
 
         $arr = DB::table('roles')->get();
         $roles = [];
@@ -507,5 +426,93 @@ class PlayerModel extends Model
                 ]);
             }
         }
+    }
+
+    /**
+     * Select all players by team with specific settings
+     */
+    public static function getTeam($settingId)
+    {
+        $rawRolesIds = 'GROUP_CONCAT(roles.id ORDER BY roles.id) AS roles_ids';
+        $rawRolesNames = 'GROUP_CONCAT(roles.name ORDER BY roles.id) AS roles_names';
+        $arr = DB::table('players_settings')
+            ->select(
+                'players.*',
+                'players_settings.text AS settings',
+                DB::raw($rawRolesIds),
+                DB::raw($rawRolesNames)
+            )
+            ->leftJoin('players', 'players.id', '=', 'players_settings.player_id')
+            ->leftJoin('players_roles', 'players_roles.player_id', '=', 'players.id')
+            ->leftJoin('roles', 'roles.id', '=', 'players_roles.role_id')
+            ->where(['setting_id' => $settingId])
+            ->groupBy('players.id')->get();
+
+        $result = [];
+        $temp = [];
+
+        foreach ($arr as $item) {
+            $item->settings = json_decode($item->settings);
+            $item->roles = array_combine(explode(',', $item->roles_ids), explode(',', $item->roles_names));
+            unset($item->roles_ids, $item->roles_names);
+
+            if ($item->settings->position) {
+                foreach (array_values(self::$rolesAreas) as $k => $v) {
+                    if (
+                        $item->settings->position->x >= $v['x'][0]
+                        && $item->settings->position->x < $v['x'][1]
+                        && $item->settings->position->y >= $v['y'][0]
+                        && $item->settings->position->y < $v['y'][1]
+                    ) {
+                        $temp[$k][] = $item;
+                        break;
+                    }
+                }
+            } else {
+                $result[11 + $item->settings->reserveIndex] = $item;
+            }
+        }
+
+        foreach ($temp as &$item) {
+            if (count($item) > 1) {
+                usort($item, function ($a, $b) {
+                    if ($a->settings->position->y > $b->settings->position->y) {
+                        return 1;
+                    } elseif ($a->settings->position->y < $b->settings->position->y) {
+                        return -1;
+                    } else {
+                        if ($a->settings->position->x < $b->settings->position->x) {
+                            return 1;
+                        } elseif ($a->settings->position->x > $b->settings->position->x) {
+                            return -1;
+                        } else {
+                            return 0;
+                        }
+                    }
+                });
+            }
+        }
+        unset($item);
+         
+        ksort($temp);
+
+        $i = 0;
+        foreach ($temp as $item) {
+            foreach ($item as $item1) {
+                $result[$i] = $item1;
+                $i++;
+            }
+        }
+         
+        ksort($result);
+
+        return $result;
+    }
+
+    /**
+     * Validate settings
+     */
+    public static function validateSettings(array $settings)
+    {
     }
 }

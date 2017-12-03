@@ -13,12 +13,14 @@ class SettingsModel extends Model
     protected $fillable = ['user_id', 'name', 'text'];
 
     /**
-     * tactics
+     * options
      */
-    public static $tactics = [
-        'defence',
-        'balance',
-        'attack',
+    protected static $options = [
+        'tactic' => [
+            'defence',
+            'balance',
+            'attack',
+        ],
     ];
 
     /**
@@ -34,14 +36,29 @@ class SettingsModel extends Model
     ];
 
     /**
+     * get options
+     */
+    public static function getOptions()
+    {
+        return self::$options;
+    }
+
+    /**
      * create method default settings
      */
     public static function createDefault($user_id)
     {
-        self::create([
+        return self::create([
         	'user_id' => $user_id,
         	'name' => self::$defaultName,
         	'text' => json_encode(self::$defaultSettings),
         ]);
+    }
+
+    /**
+     * Validate settings
+     */
+    public static function validateSettings(stdClass $settings)
+    {
     }
 }
