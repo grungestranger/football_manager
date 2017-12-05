@@ -1,6 +1,7 @@
 #field {position: relative; width: 520px; height: 320px; background: green;}
 .player {position: absolute; background: red; width: 20px; height: 20px; border-radius: 10px; cursor: pointer; text-align: center; line-height: 20px;}
 #players {float: left;}
-#settings_block {float: left;}
+#players td {padding: 2px 3px;}
+#settingsForm {float: left;}
 #save_settings {display: none;}
 #save_as_settings_block > div {background: #fff; width: 400px; padding: 20px; margin-top: 100px;}

@@ -3,13 +3,14 @@ $(document).ready(function(){
 	var fieldCoef = 0.5;
 
 	$('.player').each(function(){
+		var pos = JSON.parse($('#settingsForm [name="players[' + $(this).data('id') + '][position]"]').val());
 		$(this).css({
-			left: ($(this).data('pos_x') * fieldCoef) + 'px',
-			bottom: ($(this).data('pos_y') * fieldCoef) + 'px'
+			left: (pos.x * fieldCoef) + 'px',
+			bottom: (pos.y * fieldCoef) + 'px'
 		});
 	});
 
-	$('#tactic').change(function(){
+	$('#settingsForm').find('input, select').change(function(){
 		$('#save_settings').show();
 	});
 
@@ -22,12 +23,28 @@ $(document).ready(function(){
 		containment: "parent",
 		stop: function(e, ui) {
 			$('#save_settings').show();
-			$(this).data({
-				pos_x: Math.round(ui.position.left / fieldCoef),
-				pos_y: Math.round(ui.position.top / fieldCoef)
-			});
+			$('#settingsForm [name="players[' + $(this).data('id') + '][position]"]').val(JSON.stringify({
+				x : Math.round(ui.position.left / fieldCoef),
+				y : Math.round(ui.position.top / fieldCoef)
+			}));
 		}
 	});
+
+	//
+	$('#players td').each(function(){
+		$(this).width($(this).width());
+	});
+	//
+	$('#players > tbody').sortable({
+        items: 'tr',
+        containment: 'parent',
+        axis: 'y',
+        cursor: 'move',
+        opacity: 0.6,
+        update: function() {
+            //sendOrderToServer();
+        }
+    });
 
 	// save settings
 	$('#save_settings').click(function(){
