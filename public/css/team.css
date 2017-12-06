@@ -1,7 +1,10 @@
 #field {position: relative; width: 520px; height: 320px; background: green;}
-.player {position: absolute; background: red; width: 20px; height: 20px; border-radius: 10px; cursor: pointer; text-align: center; line-height: 20px;}
+.player {position: absolute; background: red; width: 20px; height: 20px; border-radius: 10px; cursor: move; text-align: center; line-height: 20px;}
 #players {float: left;}
 #players td {padding: 2px 3px;}
+#players > tbody > tr {cursor: move;}
+#players > tbody > tr:nth-child(odd) {background: #eee;}
+#players > tbody > tr:nth-child(even) {background: #ddd;}
 #settingsForm {float: left;}
 #save_settings {display: none;}
 #save_as_settings_block > div {background: #fff; width: 400px; padding: 20px; margin-top: 100px;}

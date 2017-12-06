@@ -2,23 +2,25 @@
 
 @section('content')
 <table id="players">
-    <tr>
-        <th>#</th>
-        <th>Игрок</th>
-        <th>Поз.</th>
-        <th>Скор.</th>
-        <th>Ускор.</th>
-        <th>Коор.</th>
-        <th>Сила.</th>
-        <th>Точн.</th>
-        <th>Вид.</th>
-        <th>Реак.</th>
-        <th>В ств.</th>
-        <th>На вых.</th>
-    </tr>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Игрок</th>
+            <th>Поз.</th>
+            <th>Скор.</th>
+            <th>Ускор.</th>
+            <th>Коор.</th>
+            <th>Сила.</th>
+            <th>Точн.</th>
+            <th>Вид.</th>
+            <th>Реак.</th>
+            <th>В ств.</th>
+            <th>На вых.</th>
+        </tr>
+    </thead>
     <tbody>
         @foreach ($players as $item)
-        <tr>
+        <tr data-id="{{ $item->id }}">
             <td>{{ $item->id }}</td>
             <td>{{ $item->name }}</td>
             <td>{{ implode(', ', $item->roles) }}</td>

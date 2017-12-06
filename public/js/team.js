@@ -20,7 +20,7 @@ $(document).ready(function(){
 
 	//
 	$('.player').draggable({
-		containment: "parent",
+		containment: 'parent',
 		stop: function(e, ui) {
 			$('#save_settings').show();
 			$('#settingsForm [name="players[' + $(this).data('id') + '][position]"]').val(JSON.stringify({
@@ -35,16 +35,28 @@ $(document).ready(function(){
 		$(this).width($(this).width());
 	});
 	//
-	$('#players > tbody').sortable({
-        items: 'tr',
-        containment: 'parent',
+	$('#players > tbody > tr').draggable({
+		containment: 'parent',
+        helper: 'clone',
         axis: 'y',
-        cursor: 'move',
         opacity: 0.6,
-        update: function() {
-            //sendOrderToServer();
-        }
-    });
+		stop: function(e, ui) {
+			var id1 = ui.helper.data('id');
+			ui.helper.remove();
+			var row1 = $('#players > tbody > tr[data-id="' + id1 + '"]');
+			var html1 = row1.html();
+			$('#players > tbody > tr').each(function(){
+				if (ui.offset.top - $(this).offset().top < $(this).height() / 2) {
+					var id2 = $(this).data('id');
+					var row2 = $(this);
+					var html2 = row2.html();
+					row1.html(html2)/*.attr('data-id', id2)*/;
+					row2.html(html1)/*.attr('data-id', id1)*/;
+					return false;
+				}
+			});
+		}
+	});
 
 	// save settings
 	$('#save_settings').click(function(){
