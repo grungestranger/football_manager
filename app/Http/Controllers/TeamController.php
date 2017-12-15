@@ -34,6 +34,16 @@ class TeamController extends Controller
     }
 
     /**
+     * Get roles areas
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getRolesAreas()
+    {
+        return response()->json(PlayerModel::getRolesAreas());
+    }
+
+    /**
      * Save settings
      *
      * @return \Illuminate\Http\Response

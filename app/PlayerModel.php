@@ -349,6 +349,14 @@ class PlayerModel extends Model
     ];
 
     /**
+     * Get roles areas
+     */
+    public static function getRolesAreas()
+    {
+        return self::$rolesAreas;
+    }
+
+    /**
      * Create team
      */
     public static function createTeam($user_id)
@@ -476,15 +484,15 @@ class PlayerModel extends Model
         foreach ($temp as &$item) {
             if (count($item) > 1) {
                 usort($item, function ($a, $b) {
-                    if ($a->settings->position->y > $b->settings->position->y) {
+                    if ($a->settings->position->y < $b->settings->position->y) {
                         return 1;
-                    } elseif ($a->settings->position->y < $b->settings->position->y) {
+                    } elseif ($a->settings->position->y > $b->settings->position->y) {
                         return -1;
                     } else {
                         if ($a->settings->position->x < $b->settings->position->x) {
-                            return 1;
-                        } elseif ($a->settings->position->x > $b->settings->position->x) {
                             return -1;
+                        } elseif ($a->settings->position->x > $b->settings->position->x) {
+                            return 1;
                         } else {
                             return 0;
                         }
