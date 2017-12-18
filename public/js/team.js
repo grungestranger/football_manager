@@ -3,7 +3,72 @@ $(document).ready(function(){
 	var fieldHeight = 600, fieldCoef = 0.5, rolesAreas;
 
 	function sortRows() {
+		if (!rolesAreas) {
+			$.ajax({
+	      		url: '/team/get-roles-areas',
+	      		success: function(data) {
+	      			rolesAreas = data;
+	      			sortRows();
+	      		}
+			});
+		} else {
+			var temp = [];
+			$('.player').each(function(){
+				var id = $(this).data('id');
+				var pos = JSON.parse($('#settingsForm [name="players[' + id + '][position]"]').val());
+				var i = 0;
+				forEach(rolesAreas, function(k, v){
+					if (
+                        pos.x >= v.x[0] && pos.x < v.x[1]
+                        && pos.y >= v.y[0] && pos.y < v.y[1]
+					) {
+						if (!isset(temp[i])) {
+							temp[i] = [];
+						}
+						temp[i][temp[i].length] = {id: id, pos: pos};
+						return false;
+					}
+					i++;
+				});
+			});
 
+			var keys = [];
+			forEach(temp, function(k, v){
+				keys[keys.length] = k;
+				if (v.length) {
+					v.sort(function(a, b){
+	                    if (a.pos.y < b.pos.y) {
+	                        return 1;
+	                    } else if (a.pos.y > b.pos.y) {
+	                        return -1;
+	                    } else {
+	                        if (a.pos.x < b.pos.x) {
+	                            return -1;
+	                        } else if (a.pos.x > b.pos.x) {
+	                            return 1;
+	                        } else {
+	                            return 0;
+	                        }
+	                    }
+					});
+				}
+			});
+
+			keys.sort();
+
+			var result = [];
+
+			forEach(keys, function(k, v){
+				forEach(temp[v], function(k1, v1){
+					result[result.length] = v1.id;
+				});
+			});
+
+
+			forEach(result, function(k, v){
+				//$('#players > tbody > tr[data-id="' + v + '"]')...
+			});
+		}
 	}
 
 	$('.player').each(function(){
@@ -31,17 +96,7 @@ $(document).ready(function(){
 				x : Math.round(ui.position.left / fieldCoef),
 				y : fieldHeight - Math.round(ui.position.top / fieldCoef)
 			}));
-			if (!rolesAreas) {
-				$.ajax({
-              		url: '/team/get-roles-areas',
-              		success: function(data) {
-              			rolesAreas = data;
-              			sortRows();
-              		}
-        		});
-			} else {
-				sortRows();
-			}
+			sortRows();
 
 			$('#save_settings').show();
 		}
