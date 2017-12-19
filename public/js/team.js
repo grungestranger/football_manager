@@ -34,8 +34,8 @@ $(document).ready(function(){
 
 			var keys = [];
 			forEach(temp, function(k, v){
-				keys[keys.length] = k;
-				if (v.length) {
+				keys[keys.length] = parseInt(k);
+				if (v.length > 1) {
 					v.sort(function(a, b){
 	                    if (a.pos.y < b.pos.y) {
 	                        return 1;
@@ -54,7 +54,9 @@ $(document).ready(function(){
 				}
 			});
 
-			keys.sort();
+			keys.sort(function(a, b){
+				return a - b;
+			});
 
 			var result = [];
 
@@ -64,9 +66,13 @@ $(document).ready(function(){
 				});
 			});
 
-
 			forEach(result, function(k, v){
-				//$('#players > tbody > tr[data-id="' + v + '"]')...
+				var player = $('#players > tbody > tr[data-id="' + v + '"]');
+				if (k) {
+					player.insertAfter('#players > tbody > tr:eq(' + k + ')');
+				} else {
+					player.prependTo('#players > tbody');
+				}
 			});
 		}
 	}
