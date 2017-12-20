@@ -19,8 +19,8 @@ $(document).ready(function(){
 				var i = 0;
 				forEach(rolesAreas, function(k, v){
 					if (
-                        pos.x >= v.x[0] && pos.x < v.x[1]
-                        && pos.y >= v.y[0] && pos.y < v.y[1]
+                        pos.x >= v.x[0] && pos.x <= v.x[1]
+                        && pos.y >= v.y[0] && pos.y <= v.y[1]
 					) {
 						if (!isset(temp[i])) {
 							temp[i] = [];
