@@ -50,6 +50,24 @@ class TeamController extends Controller
      */
     public function save(Request $request)
     {
+        $errors = [];
+
+        if (
+            !is_string($request->input('settings_id'))
+            || !($settings = SettingsModel::where('user_id', $this->user->id)->find($request->input('settings_id')))
+            || !is_array($request->input('settings'))
+            || !SettingsModel::validateSettings($request->input('settings'))
+        ) {
+            $errors[] = ['code' => 0, 'message' => 'Wrong data'];
+        }
+
+        if (!$errors) {
+            echo 'good';
+        } else {
+            echo 'bad';
+        }
+
+        
         // Save global settings
         // Save settings for each user
     }

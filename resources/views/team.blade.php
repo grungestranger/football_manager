@@ -39,7 +39,7 @@
 </table>
 <form id="settingsForm">
     <div id="controls">
-        <select id="settings">
+        <select name="settings_id">
         @foreach ($settings as $item)
             <option value="{{ $item->id }}">{{ $item->name }}</option>
         @endforeach
@@ -49,7 +49,7 @@
     </div>
     @foreach ($options as $k => $v)
         {{ $k }}: 
-        <select name="{{ $k }}">
+        <select name="settings[{{ $k }}]">
         @foreach ($v as $item)
             <option value="{{ $item }}"{!! $settings[0]->settings->$k == $item ? ' selected' : '' !!}>{{ $item }}</option>
         @endforeach

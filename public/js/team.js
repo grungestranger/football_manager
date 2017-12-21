@@ -165,19 +165,12 @@ $(document).ready(function(){
 		$.ajax({  
 			type: 'POST', 				
 			url: '/team/save',
-			data: {
-				data: JSON.stringify({
-					settings: {
-						id: $('#settings').val(),
-						tactic: $('#tactic').val()
-					}
-				})
-			},
+			data: $('#settingsForm').serialize(),
 			success: function(data) {
 				if (data.success) {
 					alert('Успешно.');
 				} else {
-					alert('error');
+					//alert('error');
 				}
 			}
 		});

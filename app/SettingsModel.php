@@ -58,7 +58,8 @@ class SettingsModel extends Model
     /**
      * Validate settings
      */
-    public static function validateSettings(stdClass $settings)
+    public static function validateSettings(array $settings)
     {
+
     }
 }
