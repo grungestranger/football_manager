@@ -16,12 +16,10 @@ class Controller extends BaseController
 
     public function __construct()
     {
-		$this->user = auth()->user();
-
 		// last active time
-		if ($this->user) {
-			$this->user->last_active_at = DB::raw('now()');
-			$this->user->save();
+		if ($user = auth()->user()) {
+			$user->last_active_at = DB::raw('now()');
+			$user->save();
         }
     }
 }

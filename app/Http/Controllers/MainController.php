@@ -8,7 +8,7 @@ class MainController extends Controller
 {
     public function index()
     {
-        if (!$this->user) {
+        if (!auth()->user()) {
             return view('auth.login');
         } else {
         	$users = User::getList();

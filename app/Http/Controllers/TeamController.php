@@ -17,7 +17,7 @@ class TeamController extends Controller
     public function index(Request $request)
     {
         // if $request->input('setting_id', 1) ...
-        $settings = $this->user->settings;
+        $settings = auth()->user()->settings;
         foreach ($settings as $item) {
             $item->settings = json_decode($item->text);
         }
@@ -54,7 +54,7 @@ class TeamController extends Controller
 
         if (
             !is_string($request->input('settings_id'))
-            || !($settings = SettingsModel::where('user_id', $this->user->id)->find($request->input('settings_id')))
+            || !($settings = SettingsModel::where('user_id', auth()->user()->id)->find($request->input('settings_id')))
             || !is_array($request->input('settings'))
             || !SettingsModel::validateSettings($request->input('settings'))
         ) {
