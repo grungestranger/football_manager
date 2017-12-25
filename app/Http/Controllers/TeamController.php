@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 
 use App\PlayerModel;
 use App\SettingsModel;
+use App\PlayersSettingsModel;
 
 class TeamController extends Controller
 {
@@ -30,7 +31,7 @@ class TeamController extends Controller
             'options' => SettingsModel::getOptions(),
         ];
 
-        return view('team', $data);
+        return $request->ajax() ? response()->json($data) : view('team', $data);
     }
 
     /**
@@ -51,24 +52,64 @@ class TeamController extends Controller
     public function save(Request $request)
     {
         $errors = [];
-
         if (
             !is_string($request->input('settings_id'))
             || !($settings = SettingsModel::where('user_id', auth()->user()->id)->find($request->input('settings_id')))
-            || !is_array($request->input('settings'))
-            || !SettingsModel::validateSettings($request->input('settings'))
+            || !$this->validator($request, $errors)
         ) {
-            $errors[] = ['code' => 0, 'message' => 'Wrong data'];
-        }
-
-        if (!$errors) {
-            echo 'good';
+            $success = FALSE;
         } else {
-            echo 'bad';
+            $success = TRUE;
+
+            $settings->text = json_encode($request->input('settings'));
+            $settings->save();
+
+            foreach ($request->input('players') as $k => $v) {
+                PlayersSettingsModel::where([
+                    ['setting_id', $settings->id],
+                    ['player_id', $k],
+                ])->update(['text' => $this->playerSettings($v)]);
+            }
         }
 
-        
-        // Save global settings
-        // Save settings for each user
+        return response()->json($success);
+    }
+
+    /**
+     * Save new settings
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function saveAs(Request $request)
+    {
+
+    }
+
+    protected function validator(Request $request, &$errors = [])
+    {
+        if (
+            !SettingsModel::validateSettings($request->input('settings'))
+            || !PlayerModel::validatePlayers($request->input('players'), auth()->user()->id, $errors)
+        ) {
+            return FALSE;
+        }
+        return TRUE;
+    }
+
+    /**
+     * Player's settings input to json
+     *
+     * @return string (json)
+     */
+    protected function playerSettings($data)
+    {
+        if ($data['reserveIndex'] == 'NULL') {
+            $data['reserveIndex'] = NULL;
+            $data['position'] = json_decode($data['position']);
+        } else {
+            $data['reserveIndex'] = intval($data['reserveIndex']);
+            $data['position'] = NULL;
+        }
+        return json_encode($data);
     }
 }

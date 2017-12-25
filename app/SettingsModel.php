@@ -58,8 +58,16 @@ class SettingsModel extends Model
     /**
      * Validate settings
      */
-    public static function validateSettings(array $settings)
+    public static function validateSettings($settings)
     {
-
+        if (!is_array($settings)) {
+            return FALSE;
+        }
+        foreach (self::$options as $k => $v) {
+            if (!isset($settings[$k]) || !in_array($settings[$k], $v)) {
+                return FALSE;
+            }
+        }
+        return TRUE;
     }
 }

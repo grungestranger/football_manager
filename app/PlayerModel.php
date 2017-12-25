@@ -518,9 +518,83 @@ class PlayerModel extends Model
     }
 
     /**
-     * Validate settings
+     * Validate players' settings
      */
-    public static function validateSettings(array $settings)
+    public static function validatePlayers($players, $user_id, &$errors = [])
     {
+        if (!is_array($players)) {
+            return FALSE;
+        }
+
+        $ids = array_keys($players);
+        sort($ids);
+
+        $allUserPlayers = self::select('id')->where('user_id', $user_id)->orderBy('id')->get()->toArray();
+        if (!$allUserPlayers) {
+            return FALSE;
+        }
+
+        $allIds = [];
+        foreach ($allUserPlayers as $item) {
+            $allIds[] = $item['id'];
+        }
+
+        if ($ids != $allIds) {
+            return FALSE;
+        }
+
+        $onFieldPlayersCount = 0;
+        $goalkeepersCount = 0;
+        $reserveIndexes = [];
+        foreach ($players as $k => $v) {
+            if (!isset($v['position']) || !isset($v['reserveIndex'])) {
+                return FALSE;
+            }
+
+            if ($v['reserveIndex'] == 'NULL') {
+                if (
+                    !($pos = json_decode($v['position']))
+                    || array_keys(get_object_vars($pos)) != ['x', 'y']
+                    || !is_int($pos->x) || !is_int($pos->y)
+                    || $pos->x < 0 || $pos->x > 1000
+                    || $pos->y < 0 || $pos->y > 600
+                ) {
+                    return FALSE;
+                }
+                $onFieldPlayersCount++;
+                if ($onFieldPlayersCount > 11) {
+                    return FALSE;
+                }
+                if (
+                    $pos->x >= self::$rolesAreas['Вр']['x'][0]
+                    && $pos->x <= self::$rolesAreas['Вр']['x'][1]
+                    && $pos->y >= self::$rolesAreas['Вр']['y'][0]
+                    && $pos->y <= self::$rolesAreas['Вр']['y'][1]
+                ) {
+                    $goalkeepersCount++;
+                    if ($goalkeepersCount > 1) {
+                        return FALSE;
+                    }
+                }
+            } else {
+                if ($v['position'] != 'NULL') {
+                    return FALSE;
+                }
+                $reserveIndexes[] = intval($v['reserveIndex']);
+            }
+        }
+
+        sort($reserveIndexes);
+        if ($reserveIndexes != array_keys($reserveIndexes)) {
+            return FALSE;
+        }
+        if ($onFieldPlayersCount != 11) {
+            return FALSE;
+        }
+        if (!$goalkeepersCount) {
+            return FALSE;
+        }
+
+        return TRUE;
     }
 }
