@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\PlayerModel;
 use App\SettingsModel;
 use App\PlayersSettingsModel;
+use Validator;
+use Illuminate\Database\QueryException;
 
 class TeamController extends Controller
 {
@@ -82,7 +84,44 @@ class TeamController extends Controller
      */
     public function saveAs(Request $request)
     {
+        $errors = [];
+        $validator = Validator::make($request->all(), [
+            'settings_name' => 'required|max:255|unique:settings,name,NULL,id,id,' . auth()->user()->id,
+        ]);
+        if (
+            $validator->fails()
+            || !$this->validator($request, $errors)
+        ) {
+            $success = FALSE;
+            //var_dump($validator->errors()->all());
+            /*if ($validator->falils()) {
+                var_dump($validator->errors()->all());
+            }*/
+        } else {
+            $success = TRUE;
 
+            try {
+
+            } catch (QueryException $e) {
+                if ($e->errorInfo[1] == 1062) {
+                    $success = FALSE;
+                    // $error[] = ...
+                } else {
+                    // trow new ...
+                }
+            }
+            /*$settings->text = json_encode($request->input('settings'));
+            $settings->save();
+
+            foreach ($request->input('players') as $k => $v) {
+                PlayersSettingsModel::where([
+                    ['setting_id', $settings->id],
+                    ['player_id', $k],
+                ])->update(['text' => $this->playerSettings($v)]);
+            }*/
+        }
+
+        return response()->json($success);
     }
 
     protected function validator(Request $request, &$errors = [])

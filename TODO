@@ -5,7 +5,7 @@
 - Мяч - ось z
 
 
-- Уникальность rememberToken - для подтверждения емейла; name, email в сидере UsersBotsSeeder
+- Уникальность rememberToken - для подтверждения емейла; name, email в сидере UsersBotsSeeder; Создание settings (name) в TeamController - можно сделать unique индекс name, user_id и проверять на успешность вставки
 
 - Может быть стоит переименовать /app/User в UserModel
 - PlayerModel::createTeam - insert-ы в цикле. Можно переделать на insert нескольких строк сразу вне цикла.

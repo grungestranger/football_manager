@@ -45,7 +45,7 @@
         @endforeach
         </select>
         <a id="save_settings" href="#">Сохранить</a>
-        <a id="save_as_settings" href="#">Сохранить как</a>
+        <a id="save_as_settings_open" href="#">Сохранить как</a>
     </div>
     @foreach ($options as $k => $v)
         {{ $k }}: 
@@ -70,8 +70,8 @@
 <div class="popup" id="save_as_settings_block">
     <div class="popup_content">
         Название:
-        <input type="text">
-        <a id="save_as_settings_save" href="#">Сохранить</a>
+        <input type="text" name="settings_name" form="settingsForm">
+        <a id="save_as_settings" href="#">Сохранить</a>
     </div>
 </div>
 @endsection

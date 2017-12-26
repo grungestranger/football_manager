@@ -90,7 +90,7 @@ $(document).ready(function(){
 		$('#save_settings').show();
 	});
 
-	$('#save_as_settings').click(function(){
+	$('#save_as_settings_open').click(function(){
 		$('#save_as_settings_block').show();
 	});
 
@@ -174,6 +174,24 @@ $(document).ready(function(){
 				}
 			}
 		});
+		return false;
+	});
+
+	// saveAs settings
+	$('#save_as_settings').click(function(){
+		$.ajax({  
+			type: 'POST', 				
+			url: '/team/save-as',
+			data: $('#settingsForm').serialize(),
+			success: function(data) {
+				if (data.success) {
+					alert('Успешно.');
+				} else {
+					//alert('error');
+				}
+			}
+		});
+		return false;
 	});
 
 });
