@@ -85,6 +85,17 @@ $(document).ready(function(){
 		});
 	});
 
+	// Select Settings
+	$('#settingsForm [name="settings_id"]').change(function(){
+		$.ajax({				
+			url: '/team',
+			data: 'settings_id=' + $(this).val(),
+			success: function(data) {
+
+			}
+		});
+	});
+
 	// show button save
 	$('#settingsForm').find('input, select').change(function(){
 		$('#save_settings').show();

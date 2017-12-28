@@ -40,8 +40,8 @@
 <form id="settingsForm">
     <div id="controls">
         <select name="settings_id">
-        @foreach ($settings as $item)
-            <option value="{{ $item->id }}">{{ $item->name }}</option>
+        @foreach ($allSettings as $item)
+            <option value="{{ $item->id }}"{!! $settings->id == $item->id ? ' selected' : '' !!}>{{ $item->name }}</option>
         @endforeach
         </select>
         <a id="save_settings" href="#">Сохранить</a>
@@ -51,7 +51,7 @@
         {{ $k }}: 
         <select name="settings[{{ $k }}]">
         @foreach ($v as $item)
-            <option value="{{ $item }}"{!! $settings[0]->settings->$k == $item ? ' selected' : '' !!}>{{ $item }}</option>
+            <option value="{{ $item }}"{!! $settings->settings->$k == $item ? ' selected' : '' !!}>{{ $item }}</option>
         @endforeach
         </select>
     @endforeach

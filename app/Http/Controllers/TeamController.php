@@ -19,16 +19,28 @@ class TeamController extends Controller
      */
     public function index(Request $request)
     {
-        // if $request->input('setting_id', 1) ...
-        $settings = auth()->user()->settings;
-        foreach ($settings as $item) {
-            $item->settings = json_decode($item->text);
+        if ($request->has('settings_id')) {
+            if (
+                !is_string($request->input('settings_id'))
+                || !($settings = auth()->user()->settings()->find($request->input('settings_id')))
+            ) {
+                abort(404);
+            }
         }
 
-        $players = PlayerModel::getTeam($settings[0]->id);
+        $allSettings = auth()->user()->settings;
+
+        if (!isset($settings)) {
+            $settings = $allSettings[0];
+        }
+
+        $settings->settings = json_decode($settings->text);
+
+        $players = PlayerModel::getTeam($settings->id);
 
         $data = [
             'settings' => $settings,
+            'allSettings' => $allSettings,
             'players' => $players,
             'options' => SettingsModel::getOptions(),
         ];
@@ -56,7 +68,7 @@ class TeamController extends Controller
         $errors = [];
         if (
             !is_string($request->input('settings_id'))
-            || !($settings = SettingsModel::where('user_id', auth()->user()->id)->find($request->input('settings_id')))
+            || !($settings = auth()->user()->settings()->find($request->input('settings_id')))
             || !$this->validator($request, $errors)
         ) {
             $success = FALSE;
@@ -93,32 +105,40 @@ class TeamController extends Controller
             || !$this->validator($request, $errors)
         ) {
             $success = FALSE;
-            //var_dump($validator->errors()->all());
-            /*if ($validator->falils()) {
-                var_dump($validator->errors()->all());
-            }*/
+
+            /*
+            if ($validator->falils()) {
+                $error[] = ...
+            }
+            */
         } else {
             $success = TRUE;
 
+            // For unique key [name, user_id] in settings table
             try {
+                $settings = SettingsModel::create([
+                    'user_id' => auth()->user()->id,
+                    'name' => $request->input('settings_name'),
+                    'text' => json_encode($request->input('settings')),
+                ]);
 
+                $playersSettingsCreateArr = [];
+                foreach ($request->input('players') as $k => $v) {
+                    $playersSettingsCreateArr[] = [
+                        'setting_id' => $settings->id,
+                        'player_id' => $k,
+                        'text' => $this->playerSettings($v),
+                    ];
+                }
+                PlayersSettingsModel::insert($playersSettingsCreateArr);
             } catch (QueryException $e) {
                 if ($e->errorInfo[1] == 1062) {
                     $success = FALSE;
                     // $error[] = ...
                 } else {
-                    // trow new ...
+                    throw $e;
                 }
             }
-            /*$settings->text = json_encode($request->input('settings'));
-            $settings->save();
-
-            foreach ($request->input('players') as $k => $v) {
-                PlayersSettingsModel::where([
-                    ['setting_id', $settings->id],
-                    ['player_id', $k],
-                ])->update(['text' => $this->playerSettings($v)]);
-            }*/
         }
 
         return response()->json($success);
