@@ -67,23 +67,31 @@ $(document).ready(function(){
 			});
 
 			forEach(result, function(k, v){
-				var player = $('#players > tbody > tr[data-id="' + v + '"]');
-				if (k) {
-					player.insertAfter('#players > tbody > tr:eq(' + k + ')');
-				} else {
-					player.prependTo('#players > tbody');
-				}
+				replaceRow(k, v);
 			});
 		}
 	}
 
-	$('.player').each(function(){
-		var pos = JSON.parse($('#settingsForm [name="players[' + $(this).data('id') + '][position]"]').val());
-		$(this).css({
-			left: (pos.x * fieldCoef) + 'px',
-			bottom: (pos.y * fieldCoef) + 'px'
+	function replaceRow(index, id) {
+		var player = $('#players > tbody > tr[data-id="' + id + '"]');
+		if (index) {
+			player.insertAfter('#players > tbody > tr:eq(' + index + ')');
+		} else {
+			player.prependTo('#players > tbody');
+		}
+	}
+
+	function playersPositions() {
+		$('.player').each(function(){
+			var pos = JSON.parse($('#settingsForm [name="players[' + $(this).data('id') + '][position]"]').val());
+			$(this).css({
+				left: (pos.x * fieldCoef) + 'px',
+				bottom: (pos.y * fieldCoef) + 'px'
+			});
 		});
-	});
+	}
+
+	playersPositions();
 
 	// Select Settings
 	$('#settingsForm [name="settings_id"]').change(function(){
@@ -91,16 +99,38 @@ $(document).ready(function(){
 			url: '/team',
 			data: 'settings_id=' + $(this).val(),
 			success: function(data) {
-
+				forEach(data.settings.settings, function(k, v){
+					// only for selects yet
+					$('#settingsForm [name="settings[' + k + ']"] option[value="' + v + '"]').prop('selected', true);
+				});
+				$('.player').remove();
+				forEach(data.players, function(k, v){
+					if (v.settings.position) {
+						$('#field').prepend('<span data-id="' + v.id + '" class="player">' + v.id + '</span>');
+					}
+					replaceRow(k, v.id);
+					forEach(v.settings, function(k1, v1){
+						if (v1 === null) {
+							v1 = 'NULL';
+						} else if (typeof(v1) == 'object') {
+							v1 = JSON.stringify(v1);
+						}
+						$('#settingsForm [name="players[' + v.id + '][' + k1 + ']"]').val(v1);
+					});
+				});
+				playersPositions();
 			}
 		});
 	});
 
 	// show button save
 	$('#settingsForm').find('input, select').change(function(){
-		$('#save_settings').show();
+		if ($(this).attr('name') != 'settings_id') {
+			$('#save_settings').show();
+		}
 	});
 
+	//
 	$('#save_as_settings_open').click(function(){
 		$('#save_as_settings_block').show();
 	});
