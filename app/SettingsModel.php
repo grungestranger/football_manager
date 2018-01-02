@@ -13,6 +13,14 @@ class SettingsModel extends Model
     protected $fillable = ['user_id', 'name', 'text'];
 
     /**
+     * players' settings
+     */
+    public function playersSettings()
+    {
+        return $this->hasMany('App\PlayersSettingsModel', 'setting_id');
+    }
+
+    /**
      * options
      */
     protected static $options = [

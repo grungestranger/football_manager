@@ -72,32 +72,10 @@ $(document).ready(function(){
 		}
 	}
 
-	function replaceRow(index, id) {
-		var player = $('#players > tbody > tr[data-id="' + id + '"]');
-		if (index) {
-			player.insertAfter('#players > tbody > tr:eq(' + index + ')');
-		} else {
-			player.prependTo('#players > tbody');
-		}
-	}
-
-	function playersPositions() {
-		$('.player').each(function(){
-			var pos = JSON.parse($('#settingsForm [name="players[' + $(this).data('id') + '][position]"]').val());
-			$(this).css({
-				left: (pos.x * fieldCoef) + 'px',
-				bottom: (pos.y * fieldCoef) + 'px'
-			});
-		});
-	}
-
-	playersPositions();
-
-	// Select Settings
-	$('#settingsForm [name="settings_id"]').change(function(){
+	function selectSettings(id) {
 		$.ajax({				
 			url: '/team',
-			data: 'settings_id=' + $(this).val(),
+			data: 'settings_id=' + id,
 			success: function(data) {
 				forEach(data.settings.settings, function(k, v){
 					// only for selects yet
@@ -119,8 +97,35 @@ $(document).ready(function(){
 					});
 				});
 				playersPositions();
+				$('#save_settings').hide();
 			}
 		});
+	}
+
+	function replaceRow(index, id) {
+		var player = $('#players > tbody > tr[data-id="' + id + '"]');
+		if (index) {
+			player.insertAfter('#players > tbody > tr:eq(' + index + ')');
+		} else {
+			player.prependTo('#players > tbody');
+		}
+	}
+
+	function playersPositions() {
+		$('.player:visible').each(function(){
+			var pos = JSON.parse($('#settingsForm [name="players[' + $(this).data('id') + '][position]"]').val());
+			$(this).css({
+				left: (pos.x * fieldCoef) + 'px',
+				bottom: (pos.y * fieldCoef) + 'px'
+			});
+		});
+	}
+
+	playersPositions();
+
+	// Select Settings
+	$('#settingsForm [name="settings_id"]').change(function(){
+		selectSettings($(this).val());
 	});
 
 	// show button save
@@ -209,6 +214,7 @@ $(document).ready(function(){
 			data: $('#settingsForm').serialize(),
 			success: function(data) {
 				if (data.success) {
+					$('#save_settings').hide();
 					alert('Успешно.');
 				} else {
 					//alert('error');
@@ -226,9 +232,39 @@ $(document).ready(function(){
 			data: $('#settingsForm').serialize(),
 			success: function(data) {
 				if (data.success) {
+					$('#settingsForm [name="settings_id"]')
+						.append('<option value="' + data.settings.id + '">' + htmlspecialchars(data.settings.name) + '</option>');
+					$('#settingsForm [name="settings_id"]').val(data.settings.id);
+					$('#save_as_settings_block').hide();
+					$('#save_as_settings_block [name="settings_name"]').val('');
+					$('#remove_settings').show();
+					$('#save_settings').hide();
 					alert('Успешно.');
 				} else {
-					//alert('error');
+					alert(data.error);
+				}
+			}
+		});
+		return false;
+	});
+
+	// remove settings
+	$('#remove_settings').click(function(){
+		var id = $('#settingsForm [name="settings_id"]').val();
+		$.ajax({  
+			type: 'POST', 				
+			url: '/team/remove',
+			data: 'settings_id=' + id,
+			success: function(data) {
+				if (data.success) {
+					$('#settingsForm [name="settings_id"] option[value="' + id + '"]').remove();
+					selectSettings($('#settingsForm [name="settings_id"]').val());
+					if ($('#settingsForm [name="settings_id"] option').length < 2) {
+						$('#remove_settings').hide();
+					}
+					alert('Успешно.');
+				} else {
+					alert(data.error);
 				}
 			}
 		});

@@ -44,7 +44,8 @@
             <option value="{{ $item->id }}"{!! $settings->id == $item->id ? ' selected' : '' !!}>{{ $item->name }}</option>
         @endforeach
         </select>
-        <a id="save_settings" href="#">Сохранить</a>
+        <a id="remove_settings"{!! $allSettings->count() < 2 ? ' class="displayNone"' : '' !!} href="#">Удалить</a>
+        <a id="save_settings" class="displayNone" href="#">Сохранить</a>
         <a id="save_as_settings_open" href="#">Сохранить как</a>
     </div>
     @foreach ($options as $k => $v)
@@ -57,9 +58,7 @@
     @endforeach
     <div id="field">
         @foreach ($players as $item)
-            @if ($item->settings->position)
-        <span data-id="{{ $item->id }}" class="player">{{ $item->id }}</span>
-            @endif
+        <span data-id="{{ $item->id }}" class="player{{ !$item->settings->position ? ' displayNone' : '' }}">{{ $item->id }}</span>
         @endforeach
     </div>
     @foreach ($players as $item)

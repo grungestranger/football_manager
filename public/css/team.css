@@ -6,5 +6,4 @@
 #players > tbody > tr:nth-child(odd) {background: #eee;}
 #players > tbody > tr:nth-child(even) {background: #ddd;}
 #settingsForm {float: left;}
-#save_settings {display: none;}
 #save_as_settings_block > div {background: #fff; width: 400px; padding: 20px; margin-top: 100px;}

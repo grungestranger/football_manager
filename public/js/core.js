@@ -18,6 +18,10 @@ function isset(variable) {
 	return typeof(variable) != 'undefined' ? true : false;
 }
 
+function htmlspecialchars(string) {
+	return $('<div/>').text(string).html();
+}
+
 // popups
 $('.popup').click(function(){
 	$(this).hide();

@@ -26,12 +26,8 @@ class TeamController extends Controller
             ) {
                 abort(404);
             }
-        }
-
-        $allSettings = auth()->user()->settings;
-
-        if (!isset($settings)) {
-            $settings = $allSettings[0];
+        } else {
+            $settings = auth()->user()->settings[0];
         }
 
         $settings->settings = json_decode($settings->text);
@@ -40,10 +36,12 @@ class TeamController extends Controller
 
         $data = [
             'settings' => $settings,
-            'allSettings' => $allSettings,
             'players' => $players,
-            'options' => SettingsModel::getOptions(),
         ];
+        if (!$request->ajax()) {
+            $data['allSettings'] = auth()->user()->settings;
+            $data['options'] = SettingsModel::getOptions();
+        }
 
         return $request->ajax() ? response()->json($data) : view('team', $data);
     }
@@ -86,6 +84,8 @@ class TeamController extends Controller
             }
         }
 
+        $result = ['success' => $success];
+
         return response()->json($success);
     }
 
@@ -108,7 +108,7 @@ class TeamController extends Controller
 
             /*
             if ($validator->falils()) {
-                $error[] = ...
+                $errors[] = ...
             }
             */
         } else {
@@ -134,14 +134,47 @@ class TeamController extends Controller
             } catch (QueryException $e) {
                 if ($e->errorInfo[1] == 1062) {
                     $success = FALSE;
-                    // $error[] = ...
+                    // $errors[] = ...
                 } else {
                     throw $e;
                 }
             }
         }
 
-        return response()->json($success);
+        $result = ['success' => $success];
+        if ($success) {
+            $result['settings'] = $settings;
+        } else {
+
+        }
+
+        return response()->json($result);
+    }
+
+    /**
+     * Remove settings
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function remove(Request $request)
+    {
+        $errors = [];
+        if (
+            !is_string($request->input('settings_id'))
+            || !($settings = auth()->user()->settings()->find($request->input('settings_id')))
+            || auth()->user()->settings()->count() < 2
+        ) {
+            $success = FALSE;
+        } else {
+            $success = TRUE;
+
+            $settings->playersSettings()->delete();
+            $settings->delete();
+        }
+
+        $result = ['success' => $success];
+
+        return response()->json($result);
     }
 
     protected function validator(Request $request, &$errors = [])
