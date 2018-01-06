@@ -24,7 +24,6 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::post('/team/save', 'TeamController@save');
 	Route::post('/team/save-as', 'TeamController@saveAs');
 	Route::post('/team/remove', 'TeamController@remove');
-	Route::get('/team/get-roles-areas', 'TeamController@getRolesAreas');
 	Route::controller('/match', 'MatchController');
 	Route::get('/check-request', 'AjaxController@checkRequest');
 });

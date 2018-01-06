@@ -1,4 +1,7 @@
 #field {position: relative; width: 520px; height: 320px; background: green;}
+.rolesArea {position: absolute; text-align: center;}
+.rolesArea.hover {background: yellow;}
+.rolesArea > span {cursor: default;}
 .player {position: absolute; background: red; width: 20px; height: 20px; border-radius: 10px; cursor: move; text-align: center; line-height: 20px;}
 #players {float: left;}
 #players td {padding: 2px 3px;}

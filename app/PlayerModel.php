@@ -573,6 +573,7 @@ class PlayerModel extends Model
                 ) {
                     $goalkeepersCount++;
                     if ($goalkeepersCount > 1) {
+                        $errors[] = 'manyGoalkeepers';
                         return FALSE;
                     }
                 }
@@ -592,6 +593,7 @@ class PlayerModel extends Model
             return FALSE;
         }
         if (!$goalkeepersCount) {
+            $errors[] = 'noGoalkeepers';
             return FALSE;
         }
 

@@ -57,6 +57,9 @@
         </select>
     @endforeach
     <div id="field">
+        @foreach ($rolesAreas as $k => $v)
+        <div data-coords="{{ json_encode($v) }}" class="rolesArea"><span>{{ $k }}</span></div>
+        @endforeach
         @foreach ($players as $item)
         <span data-id="{{ $item->id }}" class="player{{ !$item->settings->position ? ' displayNone' : '' }}">{{ $item->id }}</span>
         @endforeach

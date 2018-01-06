@@ -41,19 +41,10 @@ class TeamController extends Controller
         if (!$request->ajax()) {
             $data['allSettings'] = auth()->user()->settings;
             $data['options'] = SettingsModel::getOptions();
+            $data['rolesAreas'] = PlayerModel::getRolesAreas();
         }
 
         return $request->ajax() ? response()->json($data) : view('team', $data);
-    }
-
-    /**
-     * Get roles areas
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function getRolesAreas()
-    {
-        return response()->json(PlayerModel::getRolesAreas());
     }
 
     /**
@@ -84,9 +75,7 @@ class TeamController extends Controller
             }
         }
 
-        $result = ['success' => $success];
-
-        return response()->json($success);
+        return response()->json($this->resultData($success, $errors));
     }
 
     /**
@@ -141,14 +130,9 @@ class TeamController extends Controller
             }
         }
 
-        $result = ['success' => $success];
-        if ($success) {
-            $result['settings'] = $settings;
-        } else {
+        $result = $success ? ['settings' => $settings] : [];
 
-        }
-
-        return response()->json($result);
+        return response()->json($this->resultData($success, $errors, $result));
     }
 
     /**
@@ -158,7 +142,6 @@ class TeamController extends Controller
      */
     public function remove(Request $request)
     {
-        $errors = [];
         if (
             !is_string($request->input('settings_id'))
             || !($settings = auth()->user()->settings()->find($request->input('settings_id')))
@@ -172,9 +155,7 @@ class TeamController extends Controller
             $settings->delete();
         }
 
-        $result = ['success' => $success];
-
-        return response()->json($result);
+        return response()->json($this->resultData($success));
     }
 
     protected function validator(Request $request, &$errors = [])
@@ -203,5 +184,30 @@ class TeamController extends Controller
             $data['position'] = NULL;
         }
         return json_encode($data);
+    }
+
+    /**
+     * Result data
+     *
+     * @return array
+     */
+    protected function resultData($success, $errors = [], $result = [])
+    {
+        $result['success'] = $success;
+        if ($success) {
+            $result['message'] = trans('common.success');
+        } else {
+            if (!$errors) {
+                $result['error'] = trans('common.wrongData') . ' ' .
+                    trans('common.reloadPage');
+            } else {
+                $str = '';
+                foreach ($errors as $k => $v) {
+                    $str .= ($k ? ' ' : '') . trans('team.' . $v);
+                }
+                $result['error'] = $str;
+            }
+        }
+        return $result;
     }
 }

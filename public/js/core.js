@@ -4,16 +4,6 @@ $.ajaxSetup({
         }
 });
 
-function forEach(data, callback) {
-	for(var key in data){
-		if(data.hasOwnProperty(key)){
-			if (callback(key, data[key]) === false) {
-				break;
-			}
-		}
-	}
-}
-
 function isset(variable) {
 	return typeof(variable) != 'undefined' ? true : false;
 }
