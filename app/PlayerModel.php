@@ -529,14 +529,11 @@ class PlayerModel extends Model
         $ids = array_keys($players);
         sort($ids);
 
-        $allUserPlayers = self::select('id')->where('user_id', $user_id)->orderBy('id')->get()->toArray();
-        if (!$allUserPlayers) {
-            return FALSE;
-        }
+        $allUserPlayers = self::where('user_id', $user_id)->orderBy('id')->get();
 
         $allIds = [];
         foreach ($allUserPlayers as $item) {
-            $allIds[] = $item['id'];
+            $allIds[] = $item->id;
         }
 
         if ($ids != $allIds) {

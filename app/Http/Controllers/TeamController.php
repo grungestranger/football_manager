@@ -87,7 +87,7 @@ class TeamController extends Controller
     {
         $errors = [];
         $validator = Validator::make($request->all(), [
-            'settings_name' => 'required|max:255|unique:settings,name,NULL,id,id,' . auth()->user()->id,
+            'settings_name' => 'required|max:255|unique:settings,name,NULL,id,user_id,' . auth()->user()->id,
         ]);
         if (
             $validator->fails()
@@ -95,11 +95,9 @@ class TeamController extends Controller
         ) {
             $success = FALSE;
 
-            /*
-            if ($validator->falils()) {
-                $errors[] = ...
+            if ($validator->fails()) {
+                $errors = $validator->errors()->all(':message');
             }
-            */
         } else {
             $success = TRUE;
 
@@ -123,7 +121,8 @@ class TeamController extends Controller
             } catch (QueryException $e) {
                 if ($e->errorInfo[1] == 1062) {
                     $success = FALSE;
-                    // $errors[] = ...
+
+                    $errors[] = trans('validation.unique', ['attribute' => trans('common.name1')]);
                 } else {
                     throw $e;
                 }
@@ -160,10 +159,14 @@ class TeamController extends Controller
 
     protected function validator(Request $request, &$errors = [])
     {
+        $playersErrors = [];
         if (
             !SettingsModel::validateSettings($request->input('settings'))
-            || !PlayerModel::validatePlayers($request->input('players'), auth()->user()->id, $errors)
+            || !PlayerModel::validatePlayers($request->input('players'), auth()->user()->id, $playersErrors)
         ) {
+            foreach ($playersErrors as $item) {
+                $errors[] = trans('team.' . $item);
+            }
             return FALSE;
         }
         return TRUE;
@@ -201,11 +204,7 @@ class TeamController extends Controller
                 $result['error'] = trans('common.wrongData') . ' ' .
                     trans('common.reloadPage');
             } else {
-                $str = '';
-                foreach ($errors as $k => $v) {
-                    $str .= ($k ? ' ' : '') . trans('team.' . $v);
-                }
-                $result['error'] = $str;
+                $result['error'] = implode(' ', $errors);
             }
         }
         return $result;

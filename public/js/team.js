@@ -234,11 +234,11 @@ $(document).ready(function(){
 			url: '/team/save-as',
 			data: $('#settingsForm').serialize(),
 			success: function(data) {
+				$('#save_as_settings_block').hide();
 				if (data.success) {
 					$('#settingsForm [name="settings_id"]')
 						.append('<option value="' + data.settings.id + '">' + htmlspecialchars(data.settings.name) + '</option>');
 					$('#settingsForm [name="settings_id"]').val(data.settings.id);
-					$('#save_as_settings_block').hide();
 					$('#save_as_settings_block [name="settings_name"]').val('');
 					$('#remove_settings').show();
 					$('#save_settings').hide();
