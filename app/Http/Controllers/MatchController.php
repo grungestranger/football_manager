@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
+
 use App\StatsModel;
 use App\MatchModel;
 use App\ActionModel;
@@ -104,10 +106,78 @@ class MatchController extends Controller
         }
     }
 
-    public function getIndex()
+    /**
+     * To make a challenge.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function challenge(Request $request)
     {
-        //$this->test1();
-        $this->test2();
+        if (!$request->ajax()) {
+        return redirect()->back()
+            ->withErrors([
+                'htht' => 'hthth',
+            ]);
+        } else {
+
+        }
+    }
+
+    public function index()
+    {
+
+
+/*
+        $k = Match::$ball_speed_k;
+        $b = 300;
+        $s = 100;
+        $r = 500;
+        $a = 50;
+
+
+        $A = pow($k, 2) / 4;
+        $B = $k * $b;
+        $C = pow($b, 2) - pow($s, 2) - $r * cos(rad2deg($a)) * $k;
+        $D = -2 * $r * cos(rad2deg($a)) * $b;
+        $E = pow($r, 2);
+
+
+
+        $P = (8 * $A * $C - 3 * pow($B, 2)) / (8 * pow($A, 2));
+        $Q = (8 * pow($A, 2) * $D + pow($B, 3) - 4 * $A * $B * $C) / (8 * pow($A, 3));
+        $R = (16 * $A * pow($B, 2) * $C - 64 * pow($A, 2) * $B * $D - 3 * pow($B, 4) + 256 * pow($A, 3) * $E) / (256 * pow($A, 4));
+
+
+
+
+        $A3 = 1;
+        $B3 = $P;
+        $C3 = (pow($P, 2) - 4 * $R) / 4;
+        $D3 = -pow($Q, 2) / 8;
+
+
+
+
+        $P3 = (3 * $A3 * $C3 - pow($B3, 2)) / (3 * pow($A3, 2));
+        $Q3 = (2 * pow($B3, 3) - 9 * $A3 * $B3 * $C3 + 27 * pow($A3, 2) * $D3) / (27 * pow($A3, 3));
+
+
+
+        $Qbig = pow($P3 / 3, 3) + pow($Q3 / 2, 2);
+
+
+        $alpha = pow(-$Q3 / 2 + sqrt($Qbig), 1 / 3);
+        $beta = pow(-$Q3 / 2 - sqrt($Qbig), 1 / 3);
+
+        //https://ru.wikipedia.org/wiki/Уравнение_четвёртой_степени
+        //https://ru.wikipedia.org/wiki/Формула_Кардано
+        //http://www.cleverstudents.ru/equations/cubic_equations.html#Cardano_formula
+        //http://ateist.spb.ru/mw/alg4.htm
+*/
+
+
+
+
         $players = $this->get_players();
 
         $data = [
@@ -117,7 +187,7 @@ class MatchController extends Controller
         return view('match', $data);
     }
 
-    public function getGet_actions() // ajax
+    public function getActions() // ajax
     {
         $fw = 1000; // длина поля
         $fh = 600; // ширина поля
@@ -225,7 +295,7 @@ class MatchController extends Controller
         return response()->json($json);
     }
 
-    private function get_players()
+    protected function get_players()
     {
         $players = StatsModel::with('player')
                     ->where('match_id', 1)
@@ -235,7 +305,7 @@ class MatchController extends Controller
         return $players;
     }
 
-    private function get_last_actions()
+    protected function get_last_actions()
     {
         $last_actions = ActionModel::where('match_id', 1)
                         ->orderBy('id', 'desc')
@@ -244,7 +314,7 @@ class MatchController extends Controller
         return $last_actions;
     }
 
-    private function reduce_last_item(&$actions)
+    protected function reduce_last_item(&$actions)
     {
         foreach ($actions[count($actions) - 1][0] as &$item) {
             $item = [round($item['x']), round($item['y'])];

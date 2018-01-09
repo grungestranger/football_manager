@@ -24,6 +24,7 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::post('/team/save', 'TeamController@save');
 	Route::post('/team/save-as', 'TeamController@saveAs');
 	Route::post('/team/remove', 'TeamController@remove');
-	Route::controller('/match', 'MatchController');
+	Route::get('/match/challenge', 'MatchController@challenge');
+	Route::get('/match', 'MatchController@index');
 	Route::get('/check-request', 'AjaxController@checkRequest');
 });

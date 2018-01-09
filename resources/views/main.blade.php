@@ -6,7 +6,7 @@
         {{ $item->name }}
         <span>{{ $item->online ? 'online' : 'offline' }}</span>
         @if($item->id != auth()->user()->id)
-        <span data-user_id="{{ $item->id }}" class="requestMatch">Предложить матч</span>
+        <a href="{{ url('match/challenge?user_id=' . $item->id) }}">Предложить матч</a>
         @endif
     </div>
     @endforeach
