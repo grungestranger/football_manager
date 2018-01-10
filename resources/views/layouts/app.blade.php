@@ -30,6 +30,15 @@
     </style>
 </head>
 <body id="app-layout">
+    @if($errors->any())
+    <div id="errors" class="popup">
+        <div class="popup_content">
+            @foreach($errors->all() as $item)
+            <p>{{ $item }}</p>
+            @endforeach
+        </div>
+    </div>
+    @endif
     <nav class="navbar navbar-default navbar-static-top">
         <div class="container">
             <div class="navbar-header">
@@ -80,6 +89,7 @@
     {{-- <script src="{{ elixir('js/app.js') }}"></script> --}}
 
     <script src="{{ url('js/core.js') }}"></script>
+    <script src="{{ url('js/app.js') }}"></script>
     @yield('js')
 
 </body>

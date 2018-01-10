@@ -11,12 +11,3 @@ function isset(variable) {
 function htmlspecialchars(string) {
 	return $('<div/>').text(string).html();
 }
-
-// popups
-$('.popup').click(function(){
-	$(this).hide();
-});
-
-$('.popup_content').click(function(event){
-	event.stopPropagation();
-});

@@ -11,6 +11,10 @@ use App\Match;
 use App\Player;
 use App\Ball;
 
+use App\User;
+use Validator;
+use Cache;
+
 class MatchController extends Controller
 {
     // Тест траектории
@@ -113,14 +117,30 @@ class MatchController extends Controller
      */
     public function challenge(Request $request)
     {
-        if (!$request->ajax()) {
-        return redirect()->back()
-            ->withErrors([
-                'htht' => 'hthth',
-            ]);
+        $success = FALSE;
+        $errors = [];
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|numeric',
+        ]);
+        if ($validator->fails()) {
+            $errors[] = trans('common.wrongData');
+        } elseif (!($user = User::where(['confirmed' => 1])->find($request->input('user_id')))) {
+            $errors[] = trans('userNotExists');
+        } elseif (!$user->online) {
+            $errors[] = trans('userNotOnline');
+        } elseif (Cache::has('userPlaying:' . $user->id)) {
+            $errors[] = trans('userPlaying');
         } else {
-
+            $success = TRUE;
         }
+
+        if ($success) {
+            $request->session()->put('waitingMatch', TRUE);
+            return redirect('match');
+        } else {
+            return redirect()->back()->withErrors($errors);
+        }
+
     }
 
     public function index()
