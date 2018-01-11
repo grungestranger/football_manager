@@ -6,7 +6,7 @@
         {{ $item->name }}
         <span>{{ $item->online ? 'online' : 'offline' }}</span>
         @if($item->online && $item->id != auth()->user()->id)
-        <a href="{{ url('match/challenge?user_id=' . $item->id) }}">Предложить матч</a>
+        <a href="{{ url('challenge?user_id=' . $item->id) }}">Предложить матч</a>
         @endif
     </div>
     @endforeach

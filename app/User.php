@@ -6,6 +6,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 use DB;
 use Illuminate\Database\Eloquent\Builder;
+
 class User extends Authenticatable
 {
     /**
