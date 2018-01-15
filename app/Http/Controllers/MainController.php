@@ -6,6 +6,7 @@ use App\User;
 use Illuminate\Http\Request;
 use Validator;
 use Cache;
+use LRedis;
 
 class MainController extends Controller
 {
@@ -31,6 +32,11 @@ class MainController extends Controller
      */
     public function challenge(Request $request)
     {
+        $redis = LRedis::connection();
+        $data = ['message' => 'grgrgrgr', 'user' => 'wfwfwfwfw'];
+        $redis->publish('message', json_encode($data));
+        return response()->json([]);
+
         $success = FALSE;
         $errors = [];
         $validator = Validator::make($request->all(), [
