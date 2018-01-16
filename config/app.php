@@ -161,6 +161,8 @@ return [
          */
         Barryvdh\Debugbar\ServiceProvider::class,
 
+        Tymon\JWTAuth\Providers\JWTAuthServiceProvider::class,
+
     ],
 
     /*

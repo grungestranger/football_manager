@@ -34,7 +34,8 @@ class MainController extends Controller
     {
         $redis = LRedis::connection();
         $data = ['message' => 'grgrgrgr', 'user' => 'wfwfwfwfw'];
-        $redis->publish('message', json_encode($data));
+        $redis->publish('user:1', json_encode($data));
+        $redis->publish('user:3', json_encode(['message' => '111111', 'user' => '22222222']));
         return response()->json([]);
 
         $success = FALSE;

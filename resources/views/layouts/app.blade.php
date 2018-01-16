@@ -5,6 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="jwt" content="{{ $jwt }}">
 
     <title>Laravel</title>
 
@@ -136,11 +137,31 @@
 </div>
 <script>
     var socket = io.connect('http://localhost:8080');
-    socket.on('message', function (data) {
+    /*socket.on('message', function (data) {
+        data = jQuery.parseJSON(data);
+        console.log(data.user);
+        $( "#messages" ).append( "<strong>"+data.user+":</strong><p>"+data.message+"</p>" );
+      });*/
+
+
+socket.on('connect', function () {
+  socket
+    .emit('authenticate', {token: $('meta[name="jwt"]').attr('content')}) //send the jwt
+    .on('authenticated', function () {
+      console.log("authorized!!!");
+    })
+    .on('unauthorized', function(msg) {
+      console.log("unauthorized: " + JSON.stringify(msg.data));
+      throw new Error(msg.data.type);
+    })
+});
+
+socket.on('message', function (data) {
         data = jQuery.parseJSON(data);
         console.log(data.user);
         $( "#messages" ).append( "<strong>"+data.user+":</strong><p>"+data.message+"</p>" );
       });
+
     $(".send-msg").click(function(e){
         e.preventDefault();
         var token = $("input[name='_token']").val();

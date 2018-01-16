@@ -6,6 +6,7 @@ use Closure;
 
 use DB;
 use Cache;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class UserHandler
 {
@@ -31,6 +32,8 @@ class UserHandler
                         unset($challenges[$k]);
                     }
                 }
+
+                view()->share('jwt', JWTAuth::fromUser($user));
             }
         }
 
