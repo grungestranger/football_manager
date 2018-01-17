@@ -136,7 +136,9 @@
     </div>
 </div>
 <script>
-    var socket = io.connect('http://localhost:8080');
+var socket = io.connect('http://localhost:8080', {
+  'query': 'token=' + $('meta[name="jwt"]').attr('content')
+});
     /*socket.on('message', function (data) {
         data = jQuery.parseJSON(data);
         console.log(data.user);
@@ -144,7 +146,12 @@
       });*/
 
 
+
 socket.on('connect', function () {
+      console.log("authorized!!!");
+    });
+
+/*socket.on('connect', function () {
   socket
     .emit('authenticate', {token: $('meta[name="jwt"]').attr('content')}) //send the jwt
     .on('authenticated', function () {
@@ -154,7 +161,7 @@ socket.on('connect', function () {
       console.log("unauthorized: " + JSON.stringify(msg.data));
       throw new Error(msg.data.type);
     })
-});
+});*/
 
 socket.on('message', function (data) {
         data = jQuery.parseJSON(data);
