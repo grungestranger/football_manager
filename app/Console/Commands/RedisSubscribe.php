@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 
 use Predis;
+use App\SocketHandler;
 
 class RedisSubscribe extends Command
 {
@@ -40,7 +41,7 @@ class RedisSubscribe extends Command
     public function handle()
     {
         Predis::subscribe(['system'], function($message) {
-            echo $message;
+            SocketHandler::work($message);
         });
     }
 }

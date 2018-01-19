@@ -1,56 +1,14 @@
 var app = require('express')();
 var server = require('http').Server(app);
+var port = 8080;
 var io = require('socket.io')(server);
-var socketioJwt = require('socketio-jwt');
+var ioJwt = require('socketio-jwt');
 var redis = require('redis');
-var myEnv = require('dotenv').config({path:'./.env'});
-
-server.listen(8080);
-
-/*io.on('connection', function (socket) {
- 
-  console.log("client connected");
-  var redisClient = redis.createClient();
-  redisClient.subscribe('message');
- 
-  redisClient.on("message", function(channel, data) {
-    console.log("mew message add in queue "+ data['message'] + " channel" + channel);
-    socket.emit(channel, data);
-  });
- 
-  socket.on('disconnect', function() {
-    redisClient.quit();
-  });
- 
-});*/
-
-
- 
-// set authorization for socket.io
-/*io.sockets
-  .on('connection', socketioJwt.authorize({
-    secret: myEnv.parsed.JWT_SECRET,
-    timeout: 15000 // 15 seconds to send the authentication message
-  })).on('authenticated', function(socket) {
-    var userId = socket.decoded_token.sub;
-    console.log('Connected user: ' + userId);
-
-    publisher.publish('system', 'authenticated:user' + userId);
-
-    var redisClient = redis.createClient();
-    redisClient.subscribe('user:' + userId);
-   
-    redisClient.on("message", function(channel, data) {
-      console.log("mew message");
-      socket.emit('message', data);
-    });
-  });*/
-
+var env = require('dotenv').config({path: './.env'});
 var publisher  = redis.createClient();
-publisher.publish('system', 'server:start');
 
-io.use(socketioJwt.authorize({
-   secret: myEnv.parsed.JWT_SECRET,
+io.use(ioJwt.authorize({
+   secret: env.parsed.JWT_SECRET,
    handshake: true
 }));
 
@@ -64,7 +22,7 @@ io.on('connection', function (socket) {
    subscriber.subscribe('user:' + userId);
    subscriber.on('message', function(channel, data){
       console.log('New message for user: ' + userId);
-      socket.emit('message', data);
+      socket.emit('common', data);
    });
 
    socket.on('disconnect', function(){
@@ -72,3 +30,6 @@ io.on('connection', function (socket) {
       publisher.publish('system', 'User disconnected: ' + userId);
    });
 });
+
+server.listen(port);
+publisher.publish('system', 'server:start');

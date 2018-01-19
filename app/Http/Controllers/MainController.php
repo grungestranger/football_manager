@@ -32,10 +32,9 @@ class MainController extends Controller
      */
     public function challenge(Request $request)
     {
-        $redis = Predis::connection();
         $data = ['message' => 'grgrgrgr', 'user' => 'wfwfwfwfw'];
-        $redis->publish('user:1', json_encode($data));
-        $redis->publish('user:3', json_encode(['message' => '111111', 'user' => '22222222']));
+        Predis::publish('user:1', json_encode($data));
+        Predis::publish('user:3', json_encode(['message' => '111111', 'user' => '22222222']));
         return response()->json([]);
 
         $success = FALSE;
