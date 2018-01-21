@@ -1,12 +1,12 @@
 <?php
 
-namespace App;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
 use DB;
 
-class PlayerModel extends Model
+class Player extends Model
 {
 	protected $table = 'players';
 
@@ -362,7 +362,7 @@ class PlayerModel extends Model
     public static function createTeam($user_id)
     {
         // user's default setting
-        $setting_id = SettingsModel::createDefault($user_id)->id;
+        $setting_id = Settings::createDefault($user_id)->id;
 
         $arr = DB::table('roles')->get();
         $roles = [];
@@ -427,7 +427,7 @@ class PlayerModel extends Model
                     $reserveIndex++;
                 }
 
-                PlayersSettingsModel::create([
+                PlayersSettings::create([
                     'player_id' => $player->id,
                     'setting_id' => $setting_id,
                     'text' => json_encode($defSet),

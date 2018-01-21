@@ -6,7 +6,7 @@ use Closure;
 
 use DB;
 use Cache;
-use Tymon\JWTAuth\Facades\JWTAuth;
+use JWTAuth;
 
 class UserHandler
 {

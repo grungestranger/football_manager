@@ -4,16 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-use App\StatsModel;
-use App\MatchModel;
-use App\ActionModel;
+use App\Models\Stats;
+use App\Models\Match as MatchModel;
 use App\Match;
 use App\Player;
 use App\Ball;
-
-use App\User;
-use Validator;
-use Cache;
 
 class MatchController extends Controller
 {
@@ -284,7 +279,7 @@ class MatchController extends Controller
 
     protected function get_players()
     {
-        $players = StatsModel::with('player')
+        $players = Stats::with('player')
                     ->where('match_id', 1)
                     ->where('out_time', NULL)
                     ->get()->toArray();

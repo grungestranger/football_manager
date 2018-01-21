@@ -1,10 +1,10 @@
 <?php
 
-namespace App;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class MatchModel extends Model
+class Match extends Model
 {
 	protected $table = 'matches';
 

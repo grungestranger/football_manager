@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Seeder;
 
-use App\PlayerModel;
-use App\User;
+use App\Models\Player;
+use App\Models\User;
 
 class UsersBotsSeeder extends Seeder
 {
@@ -38,6 +38,6 @@ class UsersBotsSeeder extends Seeder
             'password' => bcrypt('secret'),
 		]);
 
-		PlayerModel::createTeam($user->id);
+		Player::createTeam($user->id);
     }
 }

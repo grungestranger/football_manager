@@ -1,10 +1,10 @@
 <?php
 
-namespace App;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class PlayersSettingsModel extends Model
+class PlayersSettings extends Model
 {
 	protected $table = 'players_settings';
 

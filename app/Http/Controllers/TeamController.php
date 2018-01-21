@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-use App\PlayerModel;
-use App\SettingsModel;
-use App\PlayersSettingsModel;
+use App\Models\Player;
+use App\Models\Settings;
+use App\Models\PlayersSettings;
 use Validator;
 use Illuminate\Database\QueryException;
 
@@ -32,7 +32,7 @@ class TeamController extends Controller
 
         $settings->settings = json_decode($settings->text);
 
-        $players = PlayerModel::getTeam($settings->id);
+        $players = Player::getTeam($settings->id);
 
         $data = [
             'settings' => $settings,
@@ -40,8 +40,8 @@ class TeamController extends Controller
         ];
         if (!$request->ajax()) {
             $data['allSettings'] = auth()->user()->settings;
-            $data['options'] = SettingsModel::getOptions();
-            $data['rolesAreas'] = PlayerModel::getRolesAreas();
+            $data['options'] = Settings::getOptions();
+            $data['rolesAreas'] = Player::getRolesAreas();
         }
 
         return $request->ajax() ? response()->json($data) : view('team', $data);
@@ -68,7 +68,7 @@ class TeamController extends Controller
             $settings->save();
 
             foreach ($request->input('players') as $k => $v) {
-                PlayersSettingsModel::where([
+                PlayersSettings::where([
                     ['setting_id', $settings->id],
                     ['player_id', $k],
                 ])->update(['text' => $this->playerSettings($v)]);
@@ -103,7 +103,7 @@ class TeamController extends Controller
 
             // For unique key [name, user_id] in settings table
             try {
-                $settings = SettingsModel::create([
+                $settings = Settings::create([
                     'user_id' => auth()->user()->id,
                     'name' => $request->input('settings_name'),
                     'text' => json_encode($request->input('settings')),
@@ -117,7 +117,7 @@ class TeamController extends Controller
                         'text' => $this->playerSettings($v),
                     ];
                 }
-                PlayersSettingsModel::insert($playersSettingsCreateArr);
+                PlayersSettings::insert($playersSettingsCreateArr);
             } catch (QueryException $e) {
                 if ($e->errorInfo[1] == 1062) {
                     $success = FALSE;
@@ -161,8 +161,8 @@ class TeamController extends Controller
     {
         $playersErrors = [];
         if (
-            !SettingsModel::validateSettings($request->input('settings'))
-            || !PlayerModel::validatePlayers($request->input('players'), auth()->user()->id, $playersErrors)
+            !Settings::validateSettings($request->input('settings'))
+            || !Player::validatePlayers($request->input('players'), auth()->user()->id, $playersErrors)
         ) {
             foreach ($playersErrors as $item) {
                 $errors[] = trans('team.' . $item);

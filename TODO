@@ -7,8 +7,7 @@
 
 - Уникальность rememberToken - для подтверждения емейла; name, email в сидере UsersBotsSeeder; Создание settings (name) в TeamController - можно сделать unique индекс name, user_id и проверять на успешность вставки
 
-- Может быть стоит переименовать /app/User в UserModel
-- PlayerModel::createTeam - insert-ы в цикле. Можно переделать на insert нескольких строк сразу вне цикла.
+- App\Models\Player::createTeam - insert-ы в цикле. Можно переделать на insert нескольких строк сразу вне цикла.
 
 - last_settings (id) in users table (open this settings in /team and match control)
 - Players Numbers

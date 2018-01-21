@@ -1,10 +1,10 @@
 <?php
 
-namespace App;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class SettingsModel extends Model
+class Settings extends Model
 {
 	protected $table = 'settings';
 
@@ -17,7 +17,7 @@ class SettingsModel extends Model
      */
     public function playersSettings()
     {
-        return $this->hasMany('App\PlayersSettingsModel', 'setting_id');
+        return $this->hasMany('App\Models\PlayersSettings', 'setting_id');
     }
 
     /**

@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\User;
+use App\Models\User;
 use Validator;
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\ThrottlesLogins;
 use Illuminate\Foundation\Auth\AuthenticatesAndRegistersUsers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Lang;
+use Auth;
+use Lang;
 use Mail;
 use Illuminate\Http\JsonResponse;
-use App\PlayerModel;
+use App\Models\Player;
 
 class AuthController extends Controller
 {
@@ -232,7 +232,7 @@ class AuthController extends Controller
                 $user->save();
 
                 // Create team
-                PlayerModel::createTeam($user->id);
+                Player::createTeam($user->id);
 
                 $success = TRUE;
                 $message = Lang::has('auth.confirm_email_success')
