@@ -28,6 +28,8 @@ io.on('connection', function (socket) {
    socket.on('disconnect', function(){
       console.log('User disconnected: ' + userId);
       publisher.publish('system', 'User disconnected: ' + userId);
+
+      //subscriber.quit();
    });
 });
 
