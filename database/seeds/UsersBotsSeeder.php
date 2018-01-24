@@ -36,6 +36,7 @@ class UsersBotsSeeder extends Seeder
             'name' => $name,
             'email' => $email,
             'password' => bcrypt('secret'),
+            'online' => 1,
 		]);
 
 		Player::createTeam($user->id);

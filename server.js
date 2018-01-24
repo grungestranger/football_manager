@@ -1,22 +1,38 @@
-var app = require('express')();
-var server = require('http').Server(app);
+//var app = require('express')();
+//var server = require('http').Server(app);
 var port = 8080;
-var io = require('socket.io')(server);
+var io = require('socket.io')(port);
 var ioJwt = require('socketio-jwt');
 var redis = require('redis');
-var env = require('dotenv').config({path: './.env'});
-var publisher  = redis.createClient();
+var env = require('dotenv').config({path: './.env'}).parsed;
+var mysql = require('mysql').createPool({
+    //host: env.DB_HOST,
+    user: env.DB_USERNAME,
+    password: env.DB_PASSWORD,
+    database: env.DB_DATABASE
+});
+var users = {};
+
+/*mysql.connect();
+mysql.query("UPDATE users SET online = 0 WHERE type = 'man' AND online != 0", function (error, results, fields) {
+   mysql.end();
+});*/
+//mysql.end();
+mysqlPool.getConnection(function(err, connection) {
+   connection.query("UPDATE users SET online = 0 WHERE type = 'man' AND online != 0", function(err, rows) {
+      connection.end();
+   });
+});
 
 io.use(ioJwt.authorize({
-   secret: env.parsed.JWT_SECRET,
+   secret: env.JWT_SECRET,
    handshake: true
 }));
 
-io.on('connection', function (socket) {
+io.on('connection', function(socket) {
    var userId = socket.decoded_token.sub;
 
-   console.log('User connected: ' + userId);
-   publisher.publish('system', 'User connected: ' + userId);
+   socketHandler('connect', userId);
 
    var subscriber = redis.createClient();
    subscriber.subscribe('user:' + userId);
@@ -25,13 +41,31 @@ io.on('connection', function (socket) {
       socket.emit('common', data);
    });
 
-   socket.on('disconnect', function(){
-      console.log('User disconnected: ' + userId);
-      publisher.publish('system', 'User disconnected: ' + userId);
-
-      //subscriber.quit();
+   socket.on('disconnect', function() {
+      socketHandler('disconnect', userId);
+      subscriber.quit();
    });
 });
 
-server.listen(port);
-publisher.publish('system', 'server:start');
+function socketHandler(event, userId) {
+   if (!users[userId]) {
+      users[userId] = {countConn: 0}
+   }
+   if (users[userId].countConn == (event == 'connect' ? 0 : 1)) {
+      mysql.query("UPDATE users SET online = " + (event == 'connect' ? 1 : 0) + " WHERE type = 'man' AND id = " + parseInt(userId));
+   }
+   users[userId].countConn += event == 'connect' ? 1 : -1;
+   console.log('User ' + event + 'ed: ' + userId);
+}
+
+//server.listen(port);
+
+// Nodemon
+
+
+
+/*
+      Object.keys(io.sockets.sockets).forEach(function(s) {
+         io.sockets.sockets[s].emit('common', data);
+      });
+*/

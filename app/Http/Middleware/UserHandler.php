@@ -4,7 +4,6 @@ namespace App\Http\Middleware;
 
 use Closure;
 
-use DB;
 use Cache;
 use JWTAuth;
 
@@ -20,10 +19,6 @@ class UserHandler
     public function handle($request, Closure $next)
     {
         if ($user = auth()->user()) {
-            // last active time
-            $user->last_active_at = DB::raw('now()');
-            $user->save();
-
             if (!$request->ajax() && !$request->wantsJson()) {
                 // challenges
                 $challenges = Cache::get('challenges:' . $user->id, []);
