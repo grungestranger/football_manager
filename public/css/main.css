@@ -1,0 +1,5 @@
+.user .status {display: inline-block; width: 10px; height: 10px;}
+.user.online .status {background: #00ff00;}
+.user.offline .status {background: #ccc;}
+
+.user.offline .challenge {display: none;}

@@ -2,6 +2,9 @@
 var socket = io.connect('http://localhost:8080', {
 	'query': 'token=' + $('meta[name="jwt"]').attr('content')
 });
+socket.on('connect', function () {
+	console.log("authorized!!!");
+});
 
 $(document).ready(function(){
 	// popups
@@ -16,10 +19,7 @@ $(document).ready(function(){
 	$('#errors').show();
 
 	// socket
-	socket.on('connect', function () {
-		console.log("authorized!!!");
-	});
-	socket.on('common', function (data) {
+	socket.on('app', function (data) {
 		data = JSON.parse(data);
 		console.log(data);
 	});
