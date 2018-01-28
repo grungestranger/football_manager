@@ -5,7 +5,6 @@ namespace App\Http\Middleware;
 use Closure;
 
 use Cache;
-use JWTAuth;
 
 class UserHandler
 {
@@ -27,8 +26,6 @@ class UserHandler
                         unset($challenges[$k]);
                     }
                 }
-
-                view()->share('jwt', JWTAuth::fromUser($user));
             }
         }
 

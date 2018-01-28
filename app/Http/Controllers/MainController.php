@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Validator;
 use Cache;
 use Predis;
+use JWTAuth;
 
 class MainController extends Controller
 {
@@ -23,6 +24,16 @@ class MainController extends Controller
         	$users = User::getList();
         	return view('main', ['users' => $users]);
         }
+    }
+
+    /**
+     * Get jwt
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function jwt()
+    {
+        return response()->json(['token' => JWTAuth::fromUser(auth()->user())]);
     }
 
     /**

@@ -4,25 +4,27 @@
 var port = 8080;
 var io = require('socket.io')(port);
 var ioJwt = require('socketio-jwt');
+var jwt = require('jsonwebtoken');
 var redis = require('redis');
 var env = require('dotenv').config({path: './.env'}).parsed;
 var mysql = require('mysql').createPool({
-    user: env.DB_USERNAME,
-    password: env.DB_PASSWORD,
-    database: env.DB_DATABASE
+   user: env.DB_USERNAME,
+   password: env.DB_PASSWORD,
+   database: env.DB_DATABASE
 });
 var users = {};
 
 // Cleare online
 mysqlQuery("UPDATE users SET online = 0 WHERE type = 'man' AND online != 0");
 
-io.use(ioJwt.authorize({
+/*io.use(ioJwt.authorize({
    secret: env.JWT_SECRET,
    handshake: true
-}));
+}));*/
 
 io.on('connection', function(socket) {
-   var userId = socket.decoded_token.sub;
+   socket.emit('needToken');
+   /*var userId = socket.decoded_token.sub;
 
    socketHandler('connect', userId);
 
@@ -36,6 +38,13 @@ io.on('connection', function(socket) {
    socket.on('disconnect', function() {
       socketHandler('disconnect', userId);
       subscriber.quit();
+   });*/
+
+   socket.on('token', function(token) {
+      // verify a token symmetric
+      jwt.verify(token, env.JWT_SECRET, function(err, decoded) {
+         console.log(decoded);
+      });
    });
 });
 
