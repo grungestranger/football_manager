@@ -14,6 +14,7 @@ use Lang;
 use Mail;
 use Illuminate\Http\JsonResponse;
 use App\Models\Player;
+use DB;
 
 class AuthController extends Controller
 {
@@ -36,6 +37,13 @@ class AuthController extends Controller
      * @var string
      */
     protected $redirectTo = '/';
+
+    /**
+     * Token length
+     *
+     * @var int
+     */
+    protected $confirm_hash_length = 25;
 
     /**
      * Create a new authentication controller instance.
@@ -68,17 +76,14 @@ class AuthController extends Controller
      * @param  array  $data
      * @return User
      */
-    protected function create(array $data, $hash = NULL)
+    protected function create(array $data)
     {
         return User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => bcrypt($data['password']),
-            'remember_token' => $hash,
         ]);
     }
-
-    protected $confirm_hash_length = 25;
     
     // LOGIN
     public function login(Request $request)
@@ -158,8 +163,8 @@ class AuthController extends Controller
     protected function getNotConfirmedEmailMessage()
     {
         return Lang::has('auth.not_confirmed_email')
-                ? Lang::get('auth.not_confirmed_email')
-                : 'Please, confirm your email.';
+            ? Lang::get('auth.not_confirmed_email')
+            : 'Please, confirm your email.';
     }
 
     protected function buildFailedValidationResponse(Request $request, array $errors)
@@ -197,16 +202,24 @@ class AuthController extends Controller
                 $request, $validator
             );
         }
-        
-        $unique = FALSE;
-        while (!$unique) {
-            $hash = str_random($this->confirm_hash_length);
-            if (!User::where('remember_token', $hash)->count()) {
-                $unique = TRUE;
+
+        $user = $this->create($request->all());
+
+        $success = FALSE;
+        while (!$success) {
+            // For unique token
+            try {
+                $hash = str_random($this->confirm_hash_length);
+                DB::table('tokens')->insert(
+                    ['user_id' => $user->id, 'token' => $hash]
+                );
+                $success = TRUE;
+            } catch (QueryException $e) {
+                if ($e->errorInfo[1] != 1062) {
+                    throw $e;
+                }
             }
         }
-
-        $user = $this->create($request->all(), $hash);
         
         Mail::send('auth.emails.confirm_link', ['hash' => $hash], function ($m) use ($user) {
             $m->to($user->email, $user->name);
@@ -225,11 +238,14 @@ class AuthController extends Controller
         $success = FALSE;
 
         if (is_string($hash) && mb_strlen($hash) == $this->confirm_hash_length) {
-            $user = User::where('remember_token', $hash)->first();
-            if ($user) {
+            $user_id = DB::table('tokens')->where('token', $hash)->value('user_id');
+            if ($user_id && ($user = User::find($user_id))) {
+                // User confirmed
                 $user->confirmed = 1;
-                $user->remember_token = NULL;
                 $user->save();
+
+                // Delete row from tokens
+                DB::table('tokens')->where('user_id', $user_id)->delete();
 
                 // Create team
                 Player::createTeam($user->id);

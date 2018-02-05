@@ -76,6 +76,4 @@ class PasswordController extends Controller
                 : 'Please, confirm your email.';
         return redirect()->back()->withInput($request->input())->withErrors(['email' => $message]);
     }
-
-     // TODO Возможно, что-то еще нужно в этом контроллере.
 }
