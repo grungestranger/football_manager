@@ -35,10 +35,38 @@ class User extends Authenticatable
     }
 
     /**
+     * the challenges I sent
+     */
+    public function challengesFrom()
+    {
+        return $this->hasMany('App\Models\Challenges', 'user_from')
+            ->orderBy('created_at', 'desc')
+            ->with('userTo');
+    }
+
+    /**
+     * the challenges sent to me
+     */
+    public function challengesTo()
+    {
+        return $this->hasMany('App\Models\Challenges', 'user_to')
+            ->orderBy('created_at', 'desc')
+            ->with('userFrom');
+    }
+
+    /**
      * Select all confirmed users
      */
     public static function getList()
     {
         return self::where(['confirmed' => 1])->get();
+    }
+
+    /**
+     * Find confirmed users
+     */
+    public static function findConfirmed($data)
+    {
+        return self::where(['confirmed' => 1])->find($data);
     }
 }

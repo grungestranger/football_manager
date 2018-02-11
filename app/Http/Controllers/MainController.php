@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Validator;
-use Cache;
 use Predis;
 use JWTAuth;
+use Illuminate\Database\QueryException;
 
 class MainController extends Controller
 {
@@ -43,10 +43,7 @@ class MainController extends Controller
      */
     public function challenge(Request $request)
     {
-        $data = ['message' => 'grgrgrgr', 'user' => 'wfwfwfwfw'];
-        Predis::publish('user:1', json_encode($data));
-        Predis::publish('user:3', json_encode(['message' => '111111', 'user' => '22222222']));
-        return response()->json([]);
+        $userFrom = auth()->user();
 
         $success = FALSE;
         $errors = [];
@@ -55,28 +52,41 @@ class MainController extends Controller
         ]);
         if ($validator->fails()) {
             $errors[] = trans('common.wrongData');
-        } elseif (!($user = User::where(['confirmed' => 1])->find($request->input('user_id')))) {
+        } elseif (!($userTo = User::findConfirmed($request->input('user_id')))) {
             $errors[] = trans('userNotExists');
-        } elseif (!$user->online) {
-            $errors[] = trans('userNotOnline');
-        } elseif (Cache::has('playing:' . $user->id)) {
-            $errors[] = trans('userPlaying');
+        } elseif ($userFrom->challengesFrom()->where(['user_to' => $userTo->id])->count()) {
+            $errors[] = trans('challengeAlreadyExists');
         } else {
             $success = TRUE;
-        }
-
-        if ($success) {
-            $challenges = Cache::get('challenges:' . $user->id, []);
-            if (!in_array(auth()->user()->id, $challenges)) {
-                $challenges[] = auth()->user()->id;
+            try {
+                $userFrom->challengesFrom()->create(['user_to' => $userTo->id]);
+                if ($userTo->type == 'man' && $userTo->online) {
+                    $data = [
+                        'action' => 'challengeAdd',
+                        'userFrom' => [
+                            'id' => $userFrom->id,
+                            'name' => $userFrom->name,
+                        ],
+                    ];
+                    Predis::publish('user:' . $userTo->id, json_encode($data));
+                }
+            } catch (QueryException $e) {
+                if ($e->errorInfo[1] == 1062) {
+                    $success = FALSE;
+                    $errors[] = trans('challengeAlreadyExists');
+                } else {
+                    throw $e;
+                }
             }
-            Cache::put('challenges:' . $user->id, $challenges, 10);
-            Cache::put('waiting:' . auth()->user()->id . ':' . $user->id, $challenges, 10);
-            $request->session()->push('waiting', $user->id);
-            return redirect('match');
-        } else {
-            return redirect()->back()->withErrors($errors);
         }
 
+        $result = [
+            'success' => $success,
+        ];
+        if (!$success) {
+            $result['error'] = $errors;
+        }
+
+        return response()->json($result);
     }
 }

@@ -30,15 +30,6 @@
     </style>
 </head>
 <body id="app-layout">
-    @if($errors->any())
-    <div id="errors" class="popup">
-        <div class="popup_content">
-            @foreach($errors->all() as $item)
-            <p>{{ $item }}</p>
-            @endforeach
-        </div>
-    </div>
-    @endif
     <nav class="navbar navbar-default navbar-static-top">
         <div class="container">
             <div class="navbar-header">
@@ -78,6 +69,13 @@
                     </li>
                 </ul>
             </div>
+
+            <div>
+                @foreach(auth()->user()->challengesFrom as $i)
+                    {{ $i->userTo->id }}
+                @endforeach
+            </div>
+
         </div>
     </nav>
 

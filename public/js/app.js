@@ -25,16 +25,25 @@ $(document).ready(function(){
 	$('.popup').click(function(){
 		$(this).hide();
 	});
-
 	$('.popup_content').click(function(event){
 		event.stopPropagation();
 	});
-	// show errors
-	$('#errors').show();
 
 	// socket
-	/*socket.on('app', function (data) {
+	socket.on('app', function (data) {
 		data = JSON.parse(data);
 		console.log(data);
-	});*/
+		switch (data.action) {
+			case 'userConnect':
+				$('.user[data-id="' + data.id + '"]')
+					.removeClass('offline')
+					.addClass('online');
+				break
+			case 'userDisconnect':
+				$('.user[data-id="' + data.id + '"]')
+					.removeClass('online')
+					.addClass('offline');
+				break
+		}
+	});
 });

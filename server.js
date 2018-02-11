@@ -79,12 +79,9 @@ function mysqlQuery(str, callback) {
    });
 }
 
-function sendToAll(data, channel) {
-   if (channel === undefined) {
-      channel = 'main';
-   }
+function sendToAll(data) {
    Object.keys(io.sockets.sockets).forEach(function(s) {
-      io.sockets.sockets[s].emit(channel, data);
+      io.sockets.sockets[s].emit('app', data);
    });
 }
 

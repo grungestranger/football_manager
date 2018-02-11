@@ -7,8 +7,15 @@
     }}">
         {{ $item->name }}
         <span class="status"></span>
-        @if($item->id != auth()->user()->id)
-        <a class="challenge" href="{{ url('challenge?user_id=' . $item->id) }}">Предложить матч</a>
+        @if(
+            $item->id != auth()->user()->id
+            && !count(auth()->user()->challengesFrom->filter(
+                function ($value, $key) use ($item) {
+                    return $value->user_to == $item->id;
+                }
+            ))
+        )
+        <a class="challenge" data-id="{{ $item->id }}" href="#">Предложить матч</a>
         @endif
     </div>
     @endforeach
