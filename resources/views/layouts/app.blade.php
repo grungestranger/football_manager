@@ -70,8 +70,19 @@
                 </ul>
             </div>
 
-            <div>
+            <div id="challengesFrom">
                 @foreach(auth()->user()->challengesFrom as $i)
+                    <div data-id="{{ $i->userTo->id }}" class="user {{
+                        $i->userTo->online ? 'online' : 'offline'
+                    }}">
+                        {{ $i->userTo->name }}
+                        <span class="status"></span>
+                        <a class="challengeRemove" href="#">Удалить</a>
+                    </div>
+                @endforeach
+            </div>
+            <div id="challengesTo">
+                @foreach(auth()->user()->challengesTo as $i)
                     {{ $i->userTo->id }}
                 @endforeach
             </div>

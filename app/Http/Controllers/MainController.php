@@ -18,10 +18,21 @@ class MainController extends Controller
      */
     public function index()
     {
-        if (!auth()->user()) {
+        if (!($user = auth()->user())) {
             return view('auth.login');
         } else {
         	$users = User::getList();
+            foreach ($users as $i) {
+                $i->online = $i->online || $i->id == $user->id;
+                $i->challenge = $i->id != $user->id
+                && count(
+                    $user->challengesFrom->filter(
+                        function ($value, $key) use ($i) {
+                            return $value->user_to == $i->id;
+                        }
+                    )
+                ) == 0;
+            }
         	return view('main', ['users' => $users]);
         }
     }
@@ -52,10 +63,10 @@ class MainController extends Controller
         ]);
         if ($validator->fails()) {
             $errors[] = trans('common.wrongData');
+        } elseif ($userFrom->id == intval($request->input('user_id'))) {
+            $errors[] = trans('common.notToYourSelf');
         } elseif (!($userTo = User::findConfirmed($request->input('user_id')))) {
-            $errors[] = trans('userNotExists');
-        } elseif ($userFrom->challengesFrom()->where(['user_to' => $userTo->id])->count()) {
-            $errors[] = trans('challengeAlreadyExists');
+            $errors[] = trans('common.userNotExists');
         } else {
             $success = TRUE;
             try {
@@ -73,7 +84,7 @@ class MainController extends Controller
             } catch (QueryException $e) {
                 if ($e->errorInfo[1] == 1062) {
                     $success = FALSE;
-                    $errors[] = trans('challengeAlreadyExists');
+                    $errors[] = trans('common.challengeAlreadyExists');
                 } else {
                     throw $e;
                 }

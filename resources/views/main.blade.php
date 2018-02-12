@@ -3,19 +3,12 @@
 @section('content')
     @foreach ($users as $item)
     <div data-id="{{ $item->id }}" class="user {{
-    	$item->online || $item->id == auth()->user()->id? 'online' : 'offline'
+    	$item->online ? 'online' : 'offline'
     }}">
         {{ $item->name }}
         <span class="status"></span>
-        @if(
-            $item->id != auth()->user()->id
-            && !count(auth()->user()->challengesFrom->filter(
-                function ($value, $key) use ($item) {
-                    return $value->user_to == $item->id;
-                }
-            ))
-        )
-        <a class="challenge" data-id="{{ $item->id }}" href="#">Предложить матч</a>
+        @if($item->challenge)
+        <a class="challenge" href="#">Предложить матч</a>
         @endif
     </div>
     @endforeach
