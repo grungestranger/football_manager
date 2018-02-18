@@ -3,7 +3,7 @@
 //server.listen(port);
 var port = 8080;
 var io = require('socket.io')(port);
-var ioJwt = require('socketio-jwt');
+//var ioJwt = require('socketio-jwt');
 var jwt = require('jsonwebtoken');
 var redis = require('redis');
 var env = require('dotenv').config({path: './.env'}).parsed;
@@ -43,7 +43,11 @@ io.on('connection', function(socket) {
    socket.on('token', function(token) {
       // verify a token symmetric
       jwt.verify(token, env.JWT_SECRET, function(err, decoded) {
-         console.log(decoded);
+         if (decoded) {
+            var ms = decoded.exp * 1000 - Date.now();
+         } else {
+            console.log('error');
+         }
       });
    });
 });
@@ -75,7 +79,7 @@ function mysqlQuery(str, callback) {
          // Handle error after the release.
          if (error) throw error;
          // Don't use the connection here, it has been returned to the pool.
-     });
+      });
    });
 }
 
