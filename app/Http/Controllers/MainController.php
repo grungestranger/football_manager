@@ -8,6 +8,7 @@ use Validator;
 use Predis;
 use JWTAuth;
 use Illuminate\Database\QueryException;
+use App\Models\Match;
 
 class MainController extends Controller
 {
@@ -23,12 +24,18 @@ class MainController extends Controller
         } else {
         	$users = User::getList();
             foreach ($users as $i) {
-                $i->online = $i->online || $i->id == $user->id;
                 $i->challenge = $i->id != $user->id
                 && count(
                     $user->challengesFrom->filter(
                         function ($value, $key) use ($i) {
                             return $value->user_to == $i->id;
+                        }
+                    )
+                ) == 0
+                && count(
+                    $user->challengesTo->filter(
+                        function ($value, $key) use ($i) {
+                            return $value->user_from == $i->id;
                         }
                     )
                 ) == 0;
@@ -59,7 +66,7 @@ class MainController extends Controller
         $success = FALSE;
         $errors = [];
         $validator = Validator::make($request->all(), [
-            'user_id' => 'required|numeric',
+            'user_id' => 'required|integer',
         ]);
         if ($validator->fails()) {
             $errors[] = trans('common.wrongData');
@@ -67,6 +74,9 @@ class MainController extends Controller
             $errors[] = trans('common.notToYourSelf');
         } elseif (!($userTo = User::findConfirmed($request->input('user_id')))) {
             $errors[] = trans('common.userNotExists');
+        // TODO need block !!!
+        } elseif ($userFrom->challengesTo()->where(['user_from' => $userTo->id])->count()) {
+            $errors[] = trans('common.challengeForYouAlreadyExists');
         } else {
             $success = TRUE;
             try {
@@ -74,7 +84,7 @@ class MainController extends Controller
                 if ($userTo->type == 'man' && $userTo->online) {
                     $data = [
                         'action' => 'challengeAdd',
-                        'userFrom' => [
+                        'user' => [
                             'id' => $userFrom->id,
                             'name' => $userFrom->name,
                         ],
@@ -89,6 +99,131 @@ class MainController extends Controller
                     throw $e;
                 }
             }
+        }
+
+        $result = [
+            'success' => $success,
+        ];
+        if (!$success) {
+            $result['error'] = $errors;
+        }
+
+        return response()->json($result);
+    }
+
+    /**
+     * To remove a from challenge.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function fromChallengeRemove(Request $request)
+    {
+        return $this->challengeRemove($request, 'from');
+    }
+
+    /**
+     * To remove a to challenge.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function toChallengeRemove(Request $request)
+    {
+        return $this->challengeRemove($request, 'to');
+    }
+
+    /**
+     * To remove a challenge.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    protected function challengeRemove(Request $request, $side)
+    {
+        $user1 = auth()->user();
+
+        $success = FALSE;
+        $errors = [];
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|integer',
+        ]);
+        if ($validator->fails()) {
+            $errors[] = trans('common.wrongData');
+        } else {
+            $success = TRUE;
+            $userId = $request->input('user_id');
+            if ($side == 'from') {
+                $user1->challengesFrom()->where(['user_to' => $userId])->delete();
+            } else {
+                $user1->challengesTo()->where(['user_from' => $userId])->delete();
+            }
+            if (
+                ($user2 = User::findConfirmed($userId))
+                && $user2->type == 'man'
+                && $user2->online
+            ) {
+                $data = [
+                    'action' => $side . 'ChallengeRemove',
+                    'user' => [
+                        'id' => $user1->id,
+                    ],
+                ];
+                Predis::publish('user:' . $user2->id, json_encode($data));
+            }
+        }
+
+        $result = [
+            'success' => $success,
+        ];
+        if (!$success) {
+            $result['error'] = $errors;
+        }
+
+        return response()->json($result);
+    }
+
+    /**
+     * To agree to the game.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    protected function play(Request $request) // TODO need block tables !!!
+    {
+        $user1 = auth()->user();
+
+        $success = FALSE;
+        $errors = [];
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|integer',
+        ]);
+        if ($validator->fails()) {
+            $errors[] = trans('common.wrongData');
+        } elseif ($user1->match) {
+            $errors[] = trans('common.youPlaying');
+        } elseif (
+            !(
+                $challenge = $user1->challengesTo()
+                    ->where(['user_from' => $request->input('user_id')])
+                    ->first()
+            )
+        ) {
+            $errors[] = trans('common.challengeNotExists');
+        } elseif (!($user2 = $challenge->userFrom)) {
+            $errors[] = trans('common.userNotExists');
+        } elseif (!$user2->online) {
+            $errors[] = trans('common.userNotOnline');
+        } elseif ($user2->match) {
+            $errors[] = trans('common.userPlaying');
+        } else {
+            $success = TRUE;
+            $user1->match1()->create(['user2_id' => $user2->id]);
+            if ($user2->type == 'man') {
+                Predis::publish('user:' . $user2->id, json_encode([
+
+                ]));
+            }
+            Predis::publish('all', json_encode([
+                'action' => 'usersStartMatch',
+                'users' => [$user1->id, $user2->id],
+            ]));
         }
 
         $result = [

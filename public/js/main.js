@@ -1,6 +1,6 @@
 $(document).ready(function(){
 	// challenge
-	$('.challenge').click(function(){
+	$(document).on('click', '.challenge', function(){
 		var user = $(this).parent();
 		$.ajax({  
 			type: 'POST', 				
@@ -10,8 +10,10 @@ $(document).ready(function(){
 			},
 			success: function(data) {
 				if (data.success) {
-					user.children('.challenge').remove();
-					user.clone().prependTo('#challengesFrom');
+					user.children('.challenge').hide();
+					var userTo = user.clone().prependTo('#challengesFrom');
+					userTo.children('.challenge').remove();
+					userTo.append($('#stdElements .challengeRemove').clone());
 				} else {
 					alert(data.error);
 				}

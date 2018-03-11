@@ -8,5 +8,13 @@ class Match extends Model
 {
 	protected $table = 'matches';
 
-    public $timestamps = false;
+	protected $fillable = ['user2_id'];
+
+    /**
+     * remove updated_at
+     */
+    public function setUpdatedAt($value)
+	{
+		// Do nothing.
+	}
 }

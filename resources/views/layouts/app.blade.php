@@ -17,6 +17,7 @@
     {{-- <link href="{{ elixir('css/app.css') }}" rel="stylesheet"> --}}
 
     <link href="{{ url('css/core.css') }}" rel="stylesheet">
+    <link href="{{ url('css/app.css') }}" rel="stylesheet">
     @yield('css')
 
     <style>
@@ -75,7 +76,7 @@
                     <div data-id="{{ $i->userTo->id }}" class="user {{
                         $i->userTo->online ? 'online' : 'offline'
                     }}">
-                        {{ $i->userTo->name }}
+                        <span class="name">{{ $i->userTo->name }}</span>
                         <span class="status"></span>
                         <a class="challengeRemove" href="#">Удалить</a>
                     </div>
@@ -83,8 +84,24 @@
             </div>
             <div id="challengesTo">
                 @foreach(auth()->user()->challengesTo as $i)
-                    {{ $i->userTo->id }}
+                    <div data-id="{{ $i->userFrom->id }}" class="user {{
+                        $i->userFrom->online ? 'online' : 'offline'
+                    }}">
+                        <span class="name">{{ $i->userFrom->name }}</span>
+                        <span class="status"></span>
+                        <a class="play" href="#">Играть</a>
+                        <a class="challengeRemove" href="#">Удалить</a>
+                    </div>
                 @endforeach
+            </div>
+
+            <div id="stdElements">
+                <div data-id="" class="user online">
+                    <span class="name"></span>
+                    <span class="status"></span>
+                    <a class="play" href="#">Играть</a>
+                    <a class="challengeRemove" href="#">Удалить</a>
+                </div>
             </div>
 
         </div>

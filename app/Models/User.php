@@ -4,8 +4,6 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
-use Illuminate\Database\Eloquent\Builder;
-
 class User extends Authenticatable
 {
     /**
@@ -14,7 +12,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'confirmed', 'type', 'name', 'email', 'password',
+        'name', 'email', 'password',
     ];
 
     /**
@@ -39,7 +37,7 @@ class User extends Authenticatable
      */
     public function challengesFrom()
     {
-        return $this->hasMany('App\Models\Challenges', 'user_from')
+        return $this->hasMany('App\Models\Challenge', 'user_from')
             ->orderBy('created_at', 'desc')
             ->with('userTo');
     }
@@ -49,9 +47,37 @@ class User extends Authenticatable
      */
     public function challengesTo()
     {
-        return $this->hasMany('App\Models\Challenges', 'user_to')
+        return $this->hasMany('App\Models\Challenge', 'user_to')
             ->orderBy('created_at', 'desc')
             ->with('userFrom');
+    }
+
+    /**
+     * 
+     */
+    public function match1()
+    {
+        return $this->hasMany('App\Models\Match', 'user1_id')
+            ->whereNull('result');
+    }
+
+    /**
+     * 
+     */
+    public function match2()
+    {
+        return $this->hasMany('App\Models\Match', 'user2_id')
+            ->whereNull('result');
+    }
+
+    /**
+     * 
+     */
+    public function getMatchAttribute()
+    {
+        return $this->match1->count() ? $this->match1->first()->id : (
+            $this->match2->count() ? $this->match2->first()->id : NULL
+        );
     }
 
     /**
@@ -59,7 +85,8 @@ class User extends Authenticatable
      */
     public static function getList()
     {
-        return self::where(['confirmed' => 1])->get();
+        return self::where(['confirmed' => 1])
+            ->with(['match1', 'match2'])->get();
     }
 
     /**

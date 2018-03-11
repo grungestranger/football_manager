@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Challenges extends Model
+class Challenge extends Model
 {
 	protected $table = 'challenges';
 
@@ -23,7 +23,8 @@ class Challenges extends Model
      */
     public function userTo()
     {
-        return $this->belongsTo('App\Models\User', 'user_to');
+        return $this->belongsTo('App\Models\User', 'user_to')
+            ->with(['match1', 'match2']);
     }
 
     /**
@@ -31,6 +32,7 @@ class Challenges extends Model
      */
     public function userFrom()
     {
-        return $this->belongsTo('App\Models\User', 'user_from');
+        return $this->belongsTo('App\Models\User', 'user_from')
+            ->with(['match1', 'match2']);
     }
 }

@@ -1,17 +1,17 @@
 @extends('layouts.app')
 
 @section('content')
+<div id="users">
     @foreach ($users as $item)
     <div data-id="{{ $item->id }}" class="user {{
     	$item->online ? 'online' : 'offline'
     }}">
         {{ $item->name }}
         <span class="status"></span>
-        @if($item->challenge)
-        <a class="challenge" href="#">Предложить матч</a>
-        @endif
+        <a class="challenge{{ $item->challenge ? '' : ' displayNone' }}" href="#">Предложить матч</a>
     </div>
     @endforeach
+</div>
 @endsection
 
 @section('css')

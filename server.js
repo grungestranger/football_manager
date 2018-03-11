@@ -12,66 +12,91 @@ var users = {};
 var timeoutMs = 10000;
 var intervalMs = 60000;
 
+var subscriber = redis.createClient();
+subscriber.subscribe('all');
+subscriber.on('message', function(channel, data) {
+    log('New message for all');
+    sendToAll(data);
+});
+
 // Cleare online
 mysqlQuery("UPDATE users SET online = 0 WHERE type = 'man' AND online != 0");
 
 io.on('connection', function(socket) {
+    socket.user = {};
+
     requireToken(socket);
 
     socket.on('disconnect', function() {
-        if (socket.userId) {
-            socketHandler('disconnect', socket.userId);
-            socket.subscriber.quit();
+        clearTimers(socket);
+        if (socket.user.id) {
+            socketHandler(socket, 'disconnect');
         }
     });
 
     socket.on('token', function(token) {
         jwt.verify(token, env.JWT_SECRET, function(err, decoded) {
             if (decoded) {
-                if (socket.timeout) {
-                    clearTimeout(socket.timeout);
-                }
-                if (socket.interval) {
-                    clearTimeout(socket.interval);
-                }
-                if (!socket.userId) {
-                    var userId = decoded.sub;
-                    var subscriber = redis.createClient();
-                    subscriber.subscribe('user:' + userId);
-                    subscriber.on('message', function(channel, data) {
-                        console.log('New message for user: ' + userId);
-                        socket.emit('app', data);
-                    });
-                    socket.userId = userId;
-                    socket.subscriber = subscriber;
-                    socketHandler('connect', userId);
+                clearTimers(socket);
+                if (!socket.user.id) {
+                    socket.user.id = decoded.sub;
+                    socketHandler(socket, 'connect');
                 }
                 var ms = decoded.exp * 1000 - Date.now();
-                setTimeout(function() {
+                socket.user.timeout = setTimeout(function() {
                     requireToken(socket);
                 }, ms);
             } else {
-                console.log('Wrong token.');
+                log('Wrong token from ' + socket.id);
             }
         });
     });
 });
 
+function log(str) {
+    console.log(str);
+}
+
 function requireToken(socket) {
-    if (socket.userId) {
-        socket.timeout = setTimeout(function() {
-            socket.userId = null;
-            socket.subscriber.quit();
-            socketHandler('disconnect', socket.userId);
+    if (socket.user.id) {
+        socket.user.timeout = setTimeout(function() {
+            socketHandler(socket, 'disconnect');
+            socket.user.id = null;
         }, timeoutMs);
     }
-    socket.emit('needToken');
-    socket.interval = setInterval(function() {
-        socket.emit('needToken');
+    needToken(socket);
+    socket.user.interval = setInterval(function() {
+        needToken(socket);
     }, intervalMs);
 }
 
-function socketHandler(event, userId) {
+function needToken(socket) {
+    socket.emit('needToken');
+    log('Need token to ' + socket.id);
+}
+
+function clearTimers(socket) {
+    if (socket.user.timeout) {
+        clearTimeout(socket.user.timeout);
+    }
+    if (socket.user.interval) {
+        clearInterval(socket.user.interval);
+    }
+}
+
+function socketHandler(socket, event) {
+    var userId = socket.user.id;
+    if (event == 'connect') {
+        var subscriber = redis.createClient();
+        subscriber.subscribe('user:' + userId);
+        subscriber.on('message', function(channel, data) {
+            log('New message for user: ' + userId);
+            socket.emit('message', data);
+        });
+        socket.user.subscriber = subscriber;
+    } else {
+        socket.user.subscriber.quit();
+    }
     if (!users[userId]) {
         users[userId] = {countConn: 0}
     }
@@ -82,11 +107,13 @@ function socketHandler(event, userId) {
         );
         sendToAll(JSON.stringify({
             action: event == 'connect' ? 'userConnect' : 'userDisconnect',
-            id: userId
+            user: {
+                id: userId,
+            },
         }));
     }
     users[userId].countConn += event == 'connect' ? 1 : -1;
-    console.log('User ' + event + 'ed: ' + userId);
+    log('User ' + event + 'ed: ' + userId + ' (' + socket.id + ')');
 }
 
 function mysqlQuery(str, callback) {
@@ -105,8 +132,8 @@ function mysqlQuery(str, callback) {
 function sendToAll(data) {
     Object.keys(io.sockets.sockets).forEach(function(key) {
         var socket = io.sockets.sockets[key];
-        if (socket.userId) {
-            socket.emit('app', data);
+        if (socket.user.id) {
+            socket.emit('message', data);
         }
     });
 }
