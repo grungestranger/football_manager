@@ -8,7 +8,6 @@ use Validator;
 use Predis;
 use JWTAuth;
 use Illuminate\Database\QueryException;
-use App\Models\Match;
 
 class MainController extends Controller
 {
