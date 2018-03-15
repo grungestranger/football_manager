@@ -26,6 +26,9 @@ socket.on('message', function (data) {
 			var userFrom = $('#stdElements .user').clone().prependTo('#challengesTo');
 			userFrom.attr('data-id', data.user.id);
 			userFrom.children('.name').html(htmlspecialchars(data.user.name));
+			if (data.user.match) {
+				userFrom.addClass('match');
+			}
 			break
 		case 'fromChallengeRemove':
 			$('#challengesTo .user[data-id="' + data.user.id + '"]').remove();
@@ -34,6 +37,11 @@ socket.on('message', function (data) {
 		case 'toChallengeRemove':
 			$('#challengesFrom .user[data-id="' + data.user.id + '"]').remove();
 			$('#users .user[data-id="' + data.user.id + '"]').children('.challenge').show();
+			break
+		case 'usersStartMatch':
+			$.each(data.users, function(k, v){
+				$('#challengesFrom .user[data-id="' + v + '"]').addClass('match');
+			});
 			break
 	}
 });

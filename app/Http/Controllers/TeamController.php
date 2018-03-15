@@ -19,15 +19,22 @@ class TeamController extends Controller
      */
     public function index(Request $request)
     {
+        $user = auth()->user();
+
         if ($request->has('settings_id')) {
             if (
                 !is_string($request->input('settings_id'))
-                || !($settings = auth()->user()->settings()->find($request->input('settings_id')))
+                || !($settings = $user->settings()->find($request->input('settings_id')))
             ) {
                 abort(404);
             }
         } else {
-            $settings = auth()->user()->settings[0];
+            if (
+                !$user->cur_setting
+                || !($settings = $user->settings->where('id', $user->cur_setting)->first())
+            ) {
+                $settings = $user->settings[0];
+            }
         }
 
         $settings->settings = json_decode($settings->text);
@@ -39,7 +46,7 @@ class TeamController extends Controller
             'players' => $players,
         ];
         if (!$request->ajax()) {
-            $data['allSettings'] = auth()->user()->settings;
+            $data['allSettings'] = $user->settings;
             $data['options'] = Settings::getOptions();
             $data['rolesAreas'] = Player::getRolesAreas();
         }

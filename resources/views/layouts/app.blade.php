@@ -75,6 +75,8 @@
                 @foreach(auth()->user()->challengesFrom as $i)
                     <div data-id="{{ $i->userTo->id }}" class="user {{
                         $i->userTo->online ? 'online' : 'offline'
+                    }}{{
+                        $i->userTo->match ? ' match' : ''
                     }}">
                         <span class="name">{{ $i->userTo->name }}</span>
                         <span class="status"></span>
@@ -86,6 +88,8 @@
                 @foreach(auth()->user()->challengesTo as $i)
                     <div data-id="{{ $i->userFrom->id }}" class="user {{
                         $i->userFrom->online ? 'online' : 'offline'
+                    }}{{
+                        $i->userFrom->match ? ' match' : ''
                     }}">
                         <span class="name">{{ $i->userFrom->name }}</span>
                         <span class="status"></span>

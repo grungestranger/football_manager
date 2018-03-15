@@ -8,6 +8,7 @@ use Validator;
 use Predis;
 use JWTAuth;
 use Illuminate\Database\QueryException;
+use App\Jobs\Match;
 
 class MainController extends Controller
 {
@@ -25,18 +26,10 @@ class MainController extends Controller
             foreach ($users as $i) {
                 $i->challenge = $i->id != $user->id
                 && count(
-                    $user->challengesFrom->filter(
-                        function ($value, $key) use ($i) {
-                            return $value->user_to == $i->id;
-                        }
-                    )
+                    $user->challengesFrom->where('user_to', $i->id)
                 ) == 0
                 && count(
-                    $user->challengesTo->filter(
-                        function ($value, $key) use ($i) {
-                            return $value->user_from == $i->id;
-                        }
-                    )
+                    $user->challengesTo->where('user_from', $i->id)
                 ) == 0;
             }
         	return view('main', ['users' => $users]);
@@ -86,6 +79,7 @@ class MainController extends Controller
                         'user' => [
                             'id' => $userFrom->id,
                             'name' => $userFrom->name,
+                            'match' => $userFrom->match ? TRUE : FALSE,
                         ],
                     ];
                     Predis::publish('user:' . $userTo->id, json_encode($data));
@@ -213,10 +207,16 @@ class MainController extends Controller
             $errors[] = trans('common.userPlaying');
         } else {
             $success = TRUE;
-            $user1->match1()->create(['user2_id' => $user2->id]);
+            $challenge->delete();
+            $match = $user1->match1()->create(['user2_id' => $user2->id]);
+            $this->dispatch((new Match($match))->delay(60));
             if ($user2->type == 'man') {
                 Predis::publish('user:' . $user2->id, json_encode([
-
+                    'action' => 'startMatch',
+                    'user' => [
+                        'id' => $user1->id,
+                        'name' => $user1->name,
+                    ],
                 ]));
             }
             Predis::publish('all', json_encode([

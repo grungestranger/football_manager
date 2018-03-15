@@ -5,6 +5,8 @@
     @foreach ($users as $item)
     <div data-id="{{ $item->id }}" class="user {{
     	$item->online ? 'online' : 'offline'
+    }}{{
+    	$item->match ? ' match' : ''
     }}">
         {{ $item->name }}
         <span class="status"></span>
