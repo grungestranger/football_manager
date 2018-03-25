@@ -75,9 +75,23 @@ class User extends Authenticatable
      */
     public function getMatchAttribute()
     {
-        return $this->match1->count() ? $this->match1->first()->id : (
-            $this->match2->count() ? $this->match2->first()->id : NULL
+        return $this->match1->count() ? $this->match1->first() : (
+            $this->match2->count() ? $this->match2->first() : NULL
         );
+    }
+
+    /**
+     * 
+     */
+    public function getSettingAttribute()
+    {
+        if (
+            !$this->cur_setting
+            || !($setting = $this->settings->where('id', $this->cur_setting)->first())
+        ) {
+            $setting = $this->settings[0];
+        }
+        return $setting;
     }
 
     /**

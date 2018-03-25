@@ -51,9 +51,11 @@
 
             <div class="collapse navbar-collapse" id="app-navbar-collapse">
                 <!-- Left Side Of Navbar -->
-                <ul class="nav navbar-nav">
-                    <li><a href="{{ url('/home') }}">Home</a></li>
+                <ul id="mainMenu" class="nav navbar-nav">
                     <li><a href="{{ url('/team') }}">Team</a></li>
+                    @if(auth()->user()->match)
+                        <li><a href="{{ url('/match') }}">Match vs</a></li>
+                    @endif
                 </ul>
 
                 <!-- Right Side Of Navbar -->

@@ -40,8 +40,13 @@ socket.on('message', function (data) {
 			break
 		case 'usersStartMatch':
 			$.each(data.users, function(k, v){
-				$('#challengesFrom .user[data-id="' + v + '"]').addClass('match');
+				$('.user[data-id="' + v + '"]').addClass('match');
 			});
+			break
+		case 'startMatch':
+			$('#mainMenu').append('<li><a href="/match">Match vs ' + htmlspecialchars(data.user.name) + '</a></li>');
+			$('#challengesFrom .user[data-id="' + data.user.id + '"]').remove();
+			$('#users .user[data-id="' + data.user.id + '"]').children('.challenge').show();
 			break
 	}
 });
@@ -88,7 +93,9 @@ $(document).ready(function(){
 			},
 			success: function(data) {
 				if (data.success) {
-
+					var name = user.children('.name').html();
+					$('#mainMenu').append('<li><a href="/match">Match vs ' + name + '</a></li>');
+					user.remove();
 				} else {
 					alert(data.error);
 				}

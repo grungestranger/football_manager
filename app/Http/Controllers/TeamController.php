@@ -28,13 +28,10 @@ class TeamController extends Controller
             ) {
                 abort(404);
             }
+            $user->cur_setting = $settings->id;
+            $user->save();
         } else {
-            if (
-                !$user->cur_setting
-                || !($settings = $user->settings->where('id', $user->cur_setting)->first())
-            ) {
-                $settings = $user->settings[0];
-            }
+            $settings = $user->setting;
         }
 
         $settings->settings = json_decode($settings->text);
@@ -92,9 +89,11 @@ class TeamController extends Controller
      */
     public function saveAs(Request $request)
     {
+        $user = auth()->user();
+
         $errors = [];
         $validator = Validator::make($request->all(), [
-            'settings_name' => 'required|max:255|unique:settings,name,NULL,id,user_id,' . auth()->user()->id,
+            'settings_name' => 'required|max:255|unique:settings,name,NULL,id,user_id,' . $user->id,
         ]);
         if (
             $validator->fails()
@@ -111,7 +110,7 @@ class TeamController extends Controller
             // For unique key [name, user_id] in settings table
             try {
                 $settings = Settings::create([
-                    'user_id' => auth()->user()->id,
+                    'user_id' => $user->id,
                     'name' => $request->input('settings_name'),
                     'text' => json_encode($request->input('settings')),
                 ]);
@@ -125,6 +124,9 @@ class TeamController extends Controller
                     ];
                 }
                 PlayersSettings::insert($playersSettingsCreateArr);
+
+                $user->cur_setting = $settings->id;
+                $user->save();
             } catch (QueryException $e) {
                 if ($e->errorInfo[1] == 1062) {
                     $success = FALSE;
