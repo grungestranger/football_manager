@@ -54,7 +54,7 @@
                 <ul id="mainMenu" class="nav navbar-nav">
                     <li><a href="{{ url('/team') }}">Team</a></li>
                     @if(auth()->user()->match)
-                        <li><a href="{{ url('/match') }}">Match vs</a></li>
+                        <li><a href="{{ url('/match') }}">Match vs {{ auth()->user()->matchOpponent->name }}</a></li>
                     @endif
                 </ul>
 

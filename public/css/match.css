@@ -1,4 +1,1 @@
-#field {position: relative; width: 1000px; height: 600px; background: green;}
-.player {position: absolute; background: red; /*padding: 5px 10px;*/width: 10px; height: 10px; border-radius: 5px;}
-#unit_0 {background: white;}
-.team_1 {background: blue;}
+#matchField {position: relative; width: 1000px; height: 600px; background: green;}

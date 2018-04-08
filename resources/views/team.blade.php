@@ -1,6 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
+@if (!empty($isMatch))
+<div id="matchField">
+
+</div>
+@endif
+
 <table id="players">
     <thead>
         <tr>
@@ -40,13 +46,21 @@
 <form id="settingsForm">
     <div id="controls">
         <select name="settings_id">
+        @if (!empty($isMatch))
+        <option value="">Load</option>
+        @endif
         @foreach ($allSettings as $item)
-            <option value="{{ $item->id }}"{!! $settings->id == $item->id ? ' selected' : '' !!}>{{ $item->name }}</option>
+            <option value="{{ $item->id }}"{!! empty($isMatch) && $settings->id == $item->id ? ' selected' : '' !!}>{{ $item->name }}</option>
         @endforeach
         </select>
         <a id="remove_settings"{!! $allSettings->count() < 2 ? ' class="displayNone"' : '' !!} href="#">Удалить</a>
         <a id="save_settings" class="displayNone" href="#">Сохранить</a>
         <a id="save_as_settings_open" href="#">Сохранить как</a>
+
+        @if (!empty($isMatch))
+        <a id="confirme_settings" class="displayNone" href="#">Принять</a>
+        @endif
+
     </div>
     @foreach ($options as $k => $v)
         {{ $k }}: 
@@ -80,6 +94,9 @@
 
 @section('css')
 <link href="{{ url('css/team.css') }}" rel="stylesheet">
+@if (!empty($isMatch))
+<link href="{{ url('css/match.css') }}" rel="stylesheet">
+@endif
 @endsection
 
 @section('js')

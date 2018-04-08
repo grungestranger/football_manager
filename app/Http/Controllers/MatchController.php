@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-use App\Match1;
-use Carbon\Carbon;
+use App\MatchHandler;
+use App\Models\Player;
+use App\Models\Settings;
 
 class MatchController extends Controller
 {
@@ -17,30 +18,24 @@ class MatchController extends Controller
     public function index()
     {
         $user = auth()->user();
-
+/*
+$matchHandler = new MatchHandler($user->match);
+$matchHandler->create();
+*/
         if ($match = $user->match) {
+            $matchHandler = new MatchHandler($match);
 
-            // if match doesn't start yet
-            if (
-                Carbon::parse($match->created_at)->timestamp
-                - Carbon::now()->timestamp
-                < config('match.preparation_time')
-            ) {
-
-            }
-            $settings = $user->setting;
-            $settings->settings = json_decode($settings->text);
-            $players = Player::getTeam($settings->id);
+            $team = $matchHandler->getTeam($user);
 
             $data = [
-                'settings' => $settings,
-                'players' => $players,
+                'settings' => $team->settings,
+                'players' => $team->players,
+                'allSettings' => $user->settings,
+                'options' => Settings::getOptions(),
+                'rolesAreas' => Player::getRolesAreas(),
+                'isMatch' => TRUE,
             ];
-            $data['allSettings'] = $user->settings;
-            $data['options'] = Settings::getOptions();
-            $data['rolesAreas'] = Player::getRolesAreas();
 
-            $data['isMatch'] = TRUE;
             return view('team', $data);
         } else {
             return redirect('/');

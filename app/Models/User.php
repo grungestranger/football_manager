@@ -33,6 +33,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Players
+     */
+    public function players()
+    {
+        return $this->hasMany('App\Models\Player');
+    }
+
+    /**
      * the challenges I sent
      */
     public function challengesFrom()
@@ -78,6 +86,19 @@ class User extends Authenticatable
         return $this->match1->count() ? $this->match1->first() : (
             $this->match2->count() ? $this->match2->first() : NULL
         );
+    }
+
+    /**
+     * 
+     */
+    public function getMatchOpponentAttribute()
+    {
+        if ($this->match) {
+            return $this->match->user1_id == $this->id
+                ? $this->match->user2 : $this->match->user1;
+        } else {
+            return NULL;
+        }
     }
 
     /**

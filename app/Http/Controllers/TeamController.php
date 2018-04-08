@@ -21,7 +21,7 @@ class TeamController extends Controller
     {
         $user = auth()->user();
 
-        if ($request->has('settings_id')) {
+        if ($request->ajax()) {
             if (
                 !is_string($request->input('settings_id'))
                 || !($settings = $user->settings()->find($request->input('settings_id')))

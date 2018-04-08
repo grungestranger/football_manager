@@ -97,4 +97,54 @@ class Ball {
 
 		return self::$value;
 	}
+
+	// Возвращает время в ms или FALSE, за которое мяч
+	// с заданной начальной скоростью
+	// преодолеет заданное расстояние
+	public static function ball_move_time($distance, $s) // ms
+	{
+		// Решаем интеграл по графику зависимости изменения скорости от времени
+		// Решаем квадратное уравнение (решение интеграла)
+		$a = self::$ball_speed_k / 2;
+		$b = $s;
+		$c = -$distance;
+
+		$D = pow($b, 2) - 4 * $a * $c;
+
+		if ($D >= 0) {
+			$x = -($b - sqrt($D)) / 2 / $a; // берем x2
+			$res = round($x * 1000);
+		} else {
+			$res = FALSE;
+		}
+
+		return $res;
+	}
+
+	// Возвращает скорость мяча (в сек.)
+	// поистечении заданного времени, учитывая заданную начальную скорость
+	public static function ball_move_speed($s, $ms)
+	{
+		$ns = $s + self::$ball_speed_k * $ms / 1000;
+		if ($ns < 0) {
+			$ns = 0;
+		}
+
+		return round($ns, 2);
+	}
+
+	// Возвращает дистанцию, которую пройдет мяч
+	// за заданное время, учитывая заданную начальную скорость
+	public static function ball_move_distance($s, $ms)
+	{
+		$t = $ms / 1000;
+		$ns = $s + self::$ball_speed_k * $t;
+		if ($ns < 0) {
+			$distance = $s / -self::$ball_speed_k * $s / 2; // подразумевается, что ball_speed_k отрицательное число
+		} else {
+			$distance = pow($t, 2) * self::$ball_speed_k / 2 + $s * $t;
+		}
+
+		return round($distance, 2);
+	}
 }

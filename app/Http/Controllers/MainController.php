@@ -8,7 +8,7 @@ use Validator;
 use Predis;
 use JWTAuth;
 use Illuminate\Database\QueryException;
-use App\Jobs\Match;
+use App\MatchHandler;
 
 class MainController extends Controller
 {
@@ -209,7 +209,8 @@ class MainController extends Controller
             $success = TRUE;
             $challenge->delete();
             $match = $user1->match1()->create(['user2_id' => $user2->id]);
-            $this->dispatch((new Match($match))->delay(config('match.preparation_time')));
+            $matchHandler = new MatchHandler($match);
+            $matchHandler->create();
             if ($user2->type == 'man') {
                 Predis::publish('user:' . $user2->id, json_encode([
                     'action' => 'startMatch',
