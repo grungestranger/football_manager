@@ -5,13 +5,13 @@
     "dev": "gulp watch"
   },
   "devDependencies": {
+    "bootstrap-sass": "^3.0.0",
     "gulp": "^3.9.1",
-    "laravel-elixir": "^5.0.0",
-    "bootstrap-sass": "^3.0.0"
+    "laravel-elixir": "^6.0.0-18"
   },
   "dependencies": {
-    "dotenv": "^4.0.0",
-    "jsonwebtoken": "^5.7.0",
+    "dotenv": "^6.0.0",
+    "jsonwebtoken": "^8.3.0",
     "mysql": "^2.15.0",
     "redis": "^2.8.0",
     "socket.io": "^2.0.4"
