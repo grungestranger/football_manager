@@ -2,7 +2,7 @@ var port = 8080;
 var io = require('socket.io')(port);
 var jwt = require('jsonwebtoken');
 var redis = require('redis');
-var env = require('dotenv').config({path: './.env'}).parsed;
+var env = require('dotenv').config({path: __dirname + '/.env'}).parsed;
 var mysql = require('mysql').createPool({
     user: env.DB_USERNAME,
     password: env.DB_PASSWORD,

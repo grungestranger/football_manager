@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
+use App\TeamMatchTrait;
 use App\Models\Player;
 use App\Models\Settings;
 use App\Models\PlayersSettings;
@@ -12,6 +13,8 @@ use Illuminate\Database\QueryException;
 
 class TeamController extends Controller
 {
+    use TeamMatchTrait;
+
     /**
      * Show team controls dashboard.
      *
@@ -41,6 +44,7 @@ class TeamController extends Controller
         $data = [
             'settings' => $settings,
             'players' => $players,
+            'isMatch' => FALSE,
         ];
         if (!$request->ajax()) {
             $data['allSettings'] = $user->settings;
@@ -164,58 +168,5 @@ class TeamController extends Controller
         }
 
         return response()->json($this->resultData($success));
-    }
-
-    protected function validator(Request $request, &$errors = [])
-    {
-        $playersErrors = [];
-        if (
-            !Settings::validateSettings($request->input('settings'))
-            || !Player::validatePlayers($request->input('players'), auth()->user()->id, $playersErrors)
-        ) {
-            foreach ($playersErrors as $item) {
-                $errors[] = trans('team.' . $item);
-            }
-            return FALSE;
-        }
-        return TRUE;
-    }
-
-    /**
-     * Player's settings input to json
-     *
-     * @return string (json)
-     */
-    protected function playerSettings($data)
-    {
-        if ($data['reserveIndex'] == 'NULL') {
-            $data['reserveIndex'] = NULL;
-            $data['position'] = json_decode($data['position']);
-        } else {
-            $data['reserveIndex'] = intval($data['reserveIndex']);
-            $data['position'] = NULL;
-        }
-        return json_encode($data);
-    }
-
-    /**
-     * Result data
-     *
-     * @return array
-     */
-    protected function resultData($success, $errors = [], $result = [])
-    {
-        $result['success'] = $success;
-        if ($success) {
-            $result['message'] = trans('common.success');
-        } else {
-            if (!$errors) {
-                $result['error'] = trans('common.wrongData') . ' ' .
-                    trans('common.reloadPage');
-            } else {
-                $result['error'] = implode(' ', $errors);
-            }
-        }
-        return $result;
     }
 }

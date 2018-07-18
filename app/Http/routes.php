@@ -30,4 +30,5 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::post('/play', 'MainController@play');
 	Route::get('/jwt', 'MainController@jwt');
 	Route::get('/match', 'MatchController@index');
+	Route::post('/match/save', 'MatchController@save');
 });

@@ -82,6 +82,9 @@ $(document).ready(function(){
 	// only for selects yet
 	$('#settingsForm select:not([name="settings_id"])').change(function(){
 		$('#save_settings').show();
+		if (window.matchFunction) {
+			matchFunction();
+		}
 	});
 
 	// open saveAs popup
@@ -150,6 +153,9 @@ $(document).ready(function(){
 				replaceRow(k, v);
 			});
 			$('#save_settings').show();
+			if (window.matchFunction) {
+				matchFunction();
+			}
 		}
 	});
 
@@ -202,6 +208,9 @@ $(document).ready(function(){
 							}
 						}
 						$('#save_settings').show();
+						if (window.matchFunction) {
+							matchFunction();
+						}
 					}
 					return false;
 				}

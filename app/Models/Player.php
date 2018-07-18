@@ -437,33 +437,13 @@ class Player extends Model
     }
 
     /**
-     * Select all players by team with specific settings
+     * Sort team
      */
-    public static function getTeam($settingId)
+    public static function sortPlayers($players)
     {
-        $rawRolesIds = 'GROUP_CONCAT(roles.id ORDER BY roles.id) AS roles_ids';
-        $rawRolesNames = 'GROUP_CONCAT(roles.name ORDER BY roles.id) AS roles_names';
-        $arr = DB::table('players_settings')
-            ->select(
-                'players.*',
-                'players_settings.text AS settings',
-                DB::raw($rawRolesIds),
-                DB::raw($rawRolesNames)
-            )
-            ->leftJoin('players', 'players.id', '=', 'players_settings.player_id')
-            ->leftJoin('players_roles', 'players_roles.player_id', '=', 'players.id')
-            ->leftJoin('roles', 'roles.id', '=', 'players_roles.role_id')
-            ->where(['setting_id' => $settingId])
-            ->groupBy('players.id')->get();
+        $result = $temp = [];
 
-        $result = [];
-        $temp = [];
-
-        foreach ($arr as $item) {
-            $item->settings = json_decode($item->settings);
-            $item->roles = array_combine(explode(',', $item->roles_ids), explode(',', $item->roles_names));
-            unset($item->roles_ids, $item->roles_names);
-
+        foreach ($players as $item) {
             if ($item->settings->position) {
                 foreach (array_values(self::$rolesAreas) as $k => $v) {
                     if (
@@ -515,6 +495,35 @@ class Player extends Model
         ksort($result);
 
         return $result;
+    }
+
+    /**
+     * Select all players by team with specific settings
+     */
+    public static function getTeam($settingId)
+    {
+        $rawRolesIds = 'GROUP_CONCAT(roles.id ORDER BY roles.id) AS roles_ids';
+        $rawRolesNames = 'GROUP_CONCAT(roles.name ORDER BY roles.id) AS roles_names';
+        $arr = DB::table('players_settings')
+            ->select(
+                'players.*',
+                'players_settings.text AS settings',
+                DB::raw($rawRolesIds),
+                DB::raw($rawRolesNames)
+            )
+            ->leftJoin('players', 'players.id', '=', 'players_settings.player_id')
+            ->leftJoin('players_roles', 'players_roles.player_id', '=', 'players.id')
+            ->leftJoin('roles', 'roles.id', '=', 'players_roles.role_id')
+            ->where(['setting_id' => $settingId])
+            ->groupBy('players.id')->get();
+
+        foreach ($arr as $item) {
+            $item->settings = json_decode($item->settings);
+            $item->roles = array_combine(explode(',', $item->roles_ids), explode(',', $item->roles_names));
+            unset($item->roles_ids, $item->roles_names);
+        }
+
+        return self::sortPlayers($arr);
     }
 
     /**

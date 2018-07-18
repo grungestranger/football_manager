@@ -1,1 +1,4 @@
-#matchField {position: relative; width: 1000px; height: 600px; background: green;}
+#matchField {position: relative; width: 1000px; height: 600px; background: green; margin: 0 0 20px 0;}
+#matchLoader > img {margin-right: -220px;}
+
+#matchField > span {position: absolute;}

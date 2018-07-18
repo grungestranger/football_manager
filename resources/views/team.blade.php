@@ -1,9 +1,16 @@
 @extends('layouts.app')
 
 @section('content')
-@if (!empty($isMatch))
+@if ($isMatch)
+    @if ($action)
+<script>
+    var action = {!! $action !!};
+</script>
+    @endif
 <div id="matchField">
-
+    @if ($time < 0)
+    <div id="matchLoader"><img src="/img/loader.gif"><span>{{ abs($time) }}</span></div>
+    @endif
 </div>
 @endif
 
@@ -46,19 +53,19 @@
 <form id="settingsForm">
     <div id="controls">
         <select name="settings_id">
-        @if (!empty($isMatch))
-        <option value="">Load</option>
+        @if (!$settings->id)
+        <option value="NULL">Load</option>
         @endif
         @foreach ($allSettings as $item)
-            <option value="{{ $item->id }}"{!! empty($isMatch) && $settings->id == $item->id ? ' selected' : '' !!}>{{ $item->name }}</option>
+            <option value="{{ $item->id }}"{!! $settings->id == $item->id ? ' selected' : '' !!}>{{ $item->name }}</option>
         @endforeach
         </select>
+        @if (!$isMatch)
         <a id="remove_settings"{!! $allSettings->count() < 2 ? ' class="displayNone"' : '' !!} href="#">Удалить</a>
         <a id="save_settings" class="displayNone" href="#">Сохранить</a>
         <a id="save_as_settings_open" href="#">Сохранить как</a>
-
-        @if (!empty($isMatch))
-        <a id="confirme_settings" class="displayNone" href="#">Принять</a>
+        @else
+        <a id="confirm_settings" class="displayNone" href="#">Принять</a>
         @endif
 
     </div>
@@ -94,7 +101,7 @@
 
 @section('css')
 <link href="{{ url('css/team.css') }}" rel="stylesheet">
-@if (!empty($isMatch))
+@if ($isMatch)
 <link href="{{ url('css/match.css') }}" rel="stylesheet">
 @endif
 @endsection
@@ -102,4 +109,7 @@
 @section('js')
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <script src="{{ url('js/team.js') }}"></script>
+@if ($isMatch)
+<script src="{{ url('js/match.js') }}"></script>
+@endif
 @endsection

@@ -5,9 +5,9 @@ namespace App;
 class Ball {
 
 	// Значения во время матча
-	public static $value;
+	public $value;
 
-	public static function do_action()
+	public function do_action()
 	{
 		if (Match::$event) {
 			if (in_array(Match::$event['name'], ['first_half', 'second_half'])) {
@@ -101,7 +101,7 @@ class Ball {
 	// Возвращает время в ms или FALSE, за которое мяч
 	// с заданной начальной скоростью
 	// преодолеет заданное расстояние
-	public static function ball_move_time($distance, $s) // ms
+	public function ball_move_time($distance, $s) // ms
 	{
 		// Решаем интеграл по графику зависимости изменения скорости от времени
 		// Решаем квадратное уравнение (решение интеграла)
@@ -123,7 +123,7 @@ class Ball {
 
 	// Возвращает скорость мяча (в сек.)
 	// поистечении заданного времени, учитывая заданную начальную скорость
-	public static function ball_move_speed($s, $ms)
+	public function ball_move_speed($s, $ms)
 	{
 		$ns = $s + self::$ball_speed_k * $ms / 1000;
 		if ($ns < 0) {
@@ -135,7 +135,7 @@ class Ball {
 
 	// Возвращает дистанцию, которую пройдет мяч
 	// за заданное время, учитывая заданную начальную скорость
-	public static function ball_move_distance($s, $ms)
+	public function ball_move_distance($s, $ms)
 	{
 		$t = $ms / 1000;
 		$ns = $s + self::$ball_speed_k * $t;

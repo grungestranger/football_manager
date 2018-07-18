@@ -9,6 +9,7 @@ use App\Jobs\Match as MatchJob;
 use Carbon\Carbon;
 use Cache;
 use Predis;
+use App\Match;
 
 class MatchHandler {
 
@@ -16,9 +17,15 @@ class MatchHandler {
 
 	protected $matchModel;
 
+    protected $cacheTime;
+
+    protected $time;
+
     public function __construct(MatchModel $matchModel)
     {
         $this->matchModel = $matchModel;
+        $this->cacheTime = config('match.cache_time');
+        $this->time = $this->getTime();
     }
 
     public function create()
@@ -30,6 +37,7 @@ class MatchHandler {
     		'id' => $this->matchModel->id,
     		'time' => 0,
     		'teams' => [],
+            'actions' => NULL,
     	];
 
     	foreach ([1, 2] as $v) {
@@ -38,14 +46,14 @@ class MatchHandler {
 			$settings = $user->setting;
 			$players = Player::getTeam($settings->id);
 
-    		$data->teams[] = (object)[
-    			'id' => $user->id,
+    		$data->teams[$user->id] = (object)[
     			'settings' => json_decode($settings->text),
+                'settings_id' => $settings->id,
     			'players' => $this->convertPlayers($players),
     		];
     	}
 
-    	Cache::put('match:' . $this->matchModel->id, $data, 20);
+    	Cache::put('match:' . $this->matchModel->id, $data, $this->cacheTime);
     }
 
     protected function convertPlayers(array $players)
@@ -55,6 +63,7 @@ class MatchHandler {
     	foreach ($players as $v) {
     		$player = (object)[
     			'id' => $v->id,
+                'user_id' => $v->user_id,
     			'settings' => $v->settings,
     			'roles' => $v->roles,
     			'stats' => NULL,
@@ -72,14 +81,54 @@ class MatchHandler {
 
     public function exec()
     {
+        $matchData = $this->getMatchData();
 
+        $la = $matchData->actions ? end($matchData->actions)[0] : NULL;
+
+        $data = [
+            'user1_id' => $this->matchModel->user1_id,
+            'field' => config('match.field'),
+        ];
+
+        $teams = json_decode(json_encode($matchData->teams), TRUE);
+
+        $match = new Match($data, $teams, $la, $matchData->time);
+        $action = $match->getAction();
+        //$stats = $match->getStats();
+
+        return $action;
+
+/*
+        if ($this->match->user1->type == 'man') {
+            Predis::publish('user:' . $this->match->user1_id, json_encode($action));
+        }
+        if ($this->match->user1->type == 'man') {
+            Predis::publish('user:' . $this->match->user1_id, json_encode($action));
+        }
+    /*
+
+        if ($user2->type == 'man') {
+                Predis::publish('user:' . $user2->id, json_encode([
+
+                ]));
+            }
+
+        $job = (new static($this->match))->delay(10);
+
+        dispatch($job);*/
     }
 
-    public function isStart()
+    public function getTime()
     {
-    	return Carbon::parse($this->matchModel->created_at)->timestamp
-            - Carbon::now()->timestamp
-            >= config('match.preparation_time');
+    	return $this->time !== NULL ? $this->time
+            : Carbon::now()->timestamp
+            - Carbon::parse($this->matchModel->created_at)->timestamp
+            - config('match.preparation_time');
+    }
+
+    public function getAction()
+    {
+        return NULL;
     }
 
     protected function getMatchData()
@@ -92,20 +141,12 @@ class MatchHandler {
 
     public function getTeam(User $user)
     {
-    	$data = $this->getMatchData();
+    	$team = $this->getMatchData()->teams[$user->id];
 
-    	foreach ($data->teams as $v) {
-    		if ($v->id == $user->id) {
-    			$team = $v;
-    			break;
-    		}
-    	}
-
-    	if (!isset($team)) {
-    		throw new \Exception('Wrong user');
-    	}
-
-    	$team->settings = (object)['settings' => $team->settings];
+    	$team->settings = (object)[
+            'id' => $team->settings_id,
+            'settings' => $team->settings,
+        ];
 
     	$players = [];
 
@@ -123,9 +164,25 @@ class MatchHandler {
     		$players[] = $player;
     	}
 
-    	$team->players = $players;
+    	$team->players = Player::sortPlayers($players);
 
     	return $team;
+    }
+
+    public function saveTeam(User $user, array $players, array $settings, $settings_id)
+    {
+        $data = $this->getMatchData();
+
+        $team = $data->teams[$user->id];
+
+        foreach ($team->players as $v) {
+            $v->settings = (object)$players[$v->id];
+        }
+
+        $team->settings = (object)$settings;
+        $team->settings_id = $settings_id;
+
+        Cache::put('match:' . $this->matchModel->id, $data, $this->cacheTime);
     }
 
 }

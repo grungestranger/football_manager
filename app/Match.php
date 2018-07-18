@@ -2,55 +2,184 @@
 
 namespace App;
 
+use App\Player;
+use App\Math;
+
 class Match {
 
     // Время от начала матча
-    private $time = 0;
+    protected $time;
 
     // Характеристики матча
-    public static $data;
+    protected $data;
 
-    // Игроки
-    public static $players;
+    // Ball
+    protected $ball;
+
+    // Команды
+    protected $teams;
 
     // last action
-    public static $la;
+    protected $la;
 
     // Действие на мяч
-    public static $ball = [];
+    protected $ballActions = [];
 
     // Стоп-сигнал
-    public static $stop = [];
+    protected $stop = [];
 
     // Событие
-    public static $event = [];
+    protected $event;
 
     // Приблизительный промежуток времени между запросами к серверу (сек.)
-    public static $query_period = 150;
+    protected $query_period = 10;
 
     // Милисекунд на итерацию минимум
     // Тут может быть 2 типа влияния
     // 1. Растягивание времени [у игроков]
     // 2. Невозможность пройти расстояние, соответствующее меньшему времени [у мяча]
-    public static $ms_min = 10; // должно быть кратно $dt
+    protected $ms_min = 10; // должно быть кратно $dt
 
     // dt (ms) в циклах перемещения
-    public static $dt = 10;
+    protected $dt = 10;
 
     // Милисекунд на итерацию максимум (если нет stop сигнала)
-    public static $ms_max = 1000;
+    protected $ms_max = 1000;
 
     // Расстояние взаимодействия (distance interaction)
-    public static $di = 10;
+    protected $di = 10;
 
     // Коэффициент зависимости скорости мяча от силы игрока при ударе
-    public static $power_to_ball_speed = 3;
+    protected $power_to_ball_speed = 3;
 
     // Изменение скорости мяча за 1 сек.
-    public static $ball_speed_k = -50;
+    protected $ball_speed_k = -50;
 
     // Последний игрок, коснувшийся мяча
-    public static $playerLastTouchedBall;
+    protected $playerLastTouchedBall;
+
+    //
+    public function __construct($data, $teams, $la, $time)
+    {
+        $this->data = $data;
+
+        $this->la = $la;
+
+        $math = new Math();
+
+        //$this->$ball = new Ball($this->getBallVal(), $this, $math);
+
+        foreach ($players as $item) {
+            if ($item->settings->position != NULL) {
+                $this->players[$item->id] = new Player($item, $this->getPlayerVal($item->id), $this, $math);
+            }
+        }
+    }
+
+    //
+    public function getPlayerVal($id)
+    {
+        return $this->la ? $this->la[$id] : NULL;
+    }
+
+    //
+    public function getBallVal()
+    {
+        return $this->la ? $this->la[0] : NULL;
+    }
+
+    //
+    public function getStop()
+    {
+        return $this->stop;
+    }
+
+    //
+    public function addStop($ms)
+    {
+        $this->stop[] = $ms;
+    }
+
+    //
+    public function getMs_max()
+    {
+        return $this->ms_max;
+    }
+
+    //
+    public function getMs_min()
+    {
+        return $this->ms_min;
+    }
+
+    //
+    public function getDt()
+    {
+        return $this->dt;
+    }
+
+    //
+    public function getData()
+    {
+        return $this->data;
+    }
+
+    //
+    public function getEvent()
+    {
+        return $this->event;
+    }
+
+    //
+    public function getAction()
+    {
+        $actions = [];
+
+        if (!$this->la) {
+            $this->event = ['name' => 'first_half'];
+        }
+
+        $qpms = $this->query_period * 1000; // query period ms
+        $time = 0;
+        while ($time < $qpms) {
+            $la = [[]];
+
+            // Действия игроков
+            foreach ($this->players as $k => $v) {
+                $la[0][$k] = $v->do_action();
+            }
+
+            // Действие мяча
+            //$la[0][0] = $this->ball->do_action();
+
+            if ($this->stop) {
+                $ms = min($this->stop);
+
+                foreach ($this->players as $k => $v) {
+                    $la[0][$k] = $v->setStopVal($ms);
+                }
+
+                $this->stop = [];
+            } else {
+                $ms = $this->ms_max;
+            }
+
+            $this->event = NULL;
+            $this->la = $la[0];
+            $time += $la[1] = $ms;
+
+            if ($time < $qpms) {
+                foreach ($la[0] as &$item) {
+                    $item = [round($item->x), round($item->y)];
+                }
+                unset($item);
+            }
+
+            $actions[] = $la;
+        }
+
+        return $actions;
+    }
 
     // Тест траектории
     public function test1()
@@ -207,139 +336,5 @@ class Match {
         ];
 
         return view('match', $data);
-    }
-
-    public function getActions() // ajax
-    {
-        $fw = 1000; // длина поля
-        $fh = 600; // ширина поля
-
-        $match = MatchModel::find(1);
-
-        if (!$match->write && time() >= $match->time) {
-            $match->write = 1;
-            //$match->save();//------
-
-            $last_actions = $this->get_last_actions();
-            if ($last_actions) {
-                $la_array = json_decode($last_actions->text, TRUE);
-                Match::$la = end($la_array)[0];
-
-                // Вносим value мяча (у игроков - в конструкторе)
-                Ball::$value = Match::$la[0];
-
-                // Сокращаем последний элемент предыдущей записи
-                $this->reduce_last_item($la_array);
-                $last_actions->text = json_encode($la_array);
-                $last_actions->save(); // лучше сохранять после успешной записи текущего actions
-            } else {
-                Match::$event = ['name' => 'first_half'];
-            }
-
-            Match::$data = [
-                'user1_id' => $match->user1_id,
-                'field' => [
-                    'w' => $fw,
-                    'h' => $fh
-                ]
-            ];
-
-            Match::$players = [];
-            $players = $this->get_players();
-            foreach ($players as $item) {
-                Match::$players[$item['player_id']] = new Player($item);
-            }
-
-            $json = [];
-            $actions = [];
-
-            $qpms = Match::$query_period * 1000; // query period ms
-            $time = 0;
-            while ($time < $qpms) {
-                $la = [[]];
-
-                // Действия игроков
-                foreach (Match::$players as $k => $v) {
-                    $la[0][$k] = $v->do_action();
-                }
-
-                // Действие мяча
-                $la[0][0] = Ball::do_action();
-
-                if (Match::$stop) {
-                    $ms = min(Match::$stop);
-
-                    foreach (Match::$players as $k => $v) {
-                        $la[0][$k] = $v->value = isset($v->valArr[$ms]) ? $v->valArr[$ms] : end($v->valArr);
-                    }
-
-                    Match::$stop = [];
-                } else {
-                    $ms = Match::$ms_max;
-                }
-
-                Match::$event = [];
-                Match::$la = $la[0];
-                $time += $la[1] = $ms;
-
-                $temp = [[], $la[1]];
-                foreach ($la[0] as $k => $v) {
-                    $temp[0][$k] = [round($v['x']), round($v['y'])];
-                }
-                $json[] = $temp;
-                if ($time < $qpms) { // и если конец матча
-                    $actions[] = $temp;
-                } else {
-                    $actions[] = $la;
-                }
-            }
-
-            /*ActionModel::create(
-                [
-                    'match_id' => $match->id,
-                    'text' => json_encode($actions)
-                ]
-            );*/
-            $match->time = time() + floor($time / 1000);
-            $match->write = 0;
-            //$match->save();//-------
-        } else {
-            while ($match->write) {
-                sleep(1);
-                $match = MatchModel::find(1);
-            }
-            $last_actions = $this->get_last_actions();
-
-            $json = json_decode($last_actions->text, TRUE);
-            $this->reduce_last_item($json);
-        }
-
-        return response()->json($json);
-    }
-
-    protected function get_players()
-    {
-        $players = Stats::with('player')
-                    ->where('match_id', 1)
-                    ->where('out_time', NULL)
-                    ->get()->toArray();
-
-        return $players;
-    }
-
-    protected function get_last_actions()
-    {
-        $last_actions = ActionModel::where('match_id', 1)
-                        ->orderBy('id', 'desc')
-                        ->limit(1)->get()->first();
-
-        return $last_actions;
-    }
-
-    protected function reduce_last_item(&$actions)
-    {
-        foreach ($actions[count($actions) - 1][0] as &$item) {
-            $item = [round($item['x']), round($item['y'])];
-        }
     }
 }

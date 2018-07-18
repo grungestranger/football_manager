@@ -2,9 +2,9 @@
 
 namespace App;
 
-class Match {
+class Math {
 
-	public static function distance($x1, $y1, $x2, $y2)
+	public function distance($x1, $y1, $x2, $y2)
 	{
 		$w = $x2 - $x1;
 		$h = $y2 - $y1;
@@ -14,7 +14,7 @@ class Match {
 		return round($distance, 2);
 	}
 
-	public static function direction($x1, $y1, $x2, $y2)
+	public function direction($x1, $y1, $x2, $y2)
 	{
 		$w = $x2 - $x1;
 		$h = $y2 - $y1;
@@ -22,18 +22,16 @@ class Match {
 		if ($w || $h) {
 			if ($w) {
 				$k = $h / $w;
+				$d = rad2deg(atan($k));
+				if ($d < 0) {
+					$d = $d + 360;
+				}
+				if ($w < 0) {
+					$d = $d + 180 * $this->sign($k, TRUE);
+				}
 			} else {
-				$k = 10000 * sign($h);
+				$d = $this->sign($h) ? 90 : 270;
 			}
-
-			$d = rad2deg(atan($k));
-			if ($d < 0) {
-				$d = $d + 360;
-			}
-			if ($w < 0) {
-				$d = $d + 180 * sign($k, TRUE);
-			}
-
 			return round($d, 2);
 		} else {
 			return FALSE;
@@ -41,7 +39,7 @@ class Match {
 	}
 
 	// $s - мс, $t - мс
-	public static function way($x1, $y1, $x2, $y2, $s, $t)
+	public function way($x1, $y1, $x2, $y2, $s, $t)
 	{
 		$w = $x2 - $x1;
 		$h = $y2 - $y1;
@@ -78,7 +76,7 @@ class Match {
 	}
 
 	// Новые координаты по направлению и расстоянию
-	public static function point($x, $y, $d, $way)
+	public function point($x, $y, $d, $way)
 	{
 		$cos = cos(deg2rad($d));
 
@@ -93,18 +91,18 @@ class Match {
 	}
 
 	// Разница направлений
-	public static function dd($d1, $d2)
+	public function dd($d1, $d2)
 	{
 		$dd = $d2 - $d1;
 		if (abs($dd) > 180) {
-			$dd = (abs($dd) - 360) * sign($dd);
+			$dd = (abs($dd) - 360) * $this->sign($dd);
 		}
 
 		return round($dd, 2);
 	}
 
 	// Нормализовать направление
-	public static function d_norm($d)
+	public function d_norm($d)
 	{
 		if ($d < 0) {
 			$d = 360 + $d;

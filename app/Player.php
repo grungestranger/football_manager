@@ -2,88 +2,118 @@
 
 namespace App;
 
+use App\Match;
+use App\Math;
+
 class Player {
 
+ 	// Match
+ 	protected $match;
+
+ 	// Математические функции
+ 	protected $math;
+
+ 	// MatchData
+ 	protected $matchData;
+
  	// ID
- 	public $id;
+ 	protected $id;
  
  	// Сторона (команда)
- 	public $side;
+ 	protected $side;
  
  	// Установки игрока
- 	public $setting;
+ 	protected $settings;
+
+ 	// Позиция (координаты)
+ 	protected $pos;
 
 	// Характеристики игрока
-	public $data;
+	protected $skills;
+
+	//
+	protected $roles;
+
+	//
+	protected $stats;
 
 	// Значения во время матча
-	public $value;
+	protected $val;
 
-	public $valArr = [];
+	protected $valArr = [];
 
 	// Массив - координаты точки, куда двигаться, и скорость.
-	public $target;
+	protected $target;
 
 
-	public function __construct($data)
+	public function __construct(\stdClass $data, $val, Match $match, Math $math)
 	{
- 		$this->id = $data['player_id'];
- 
- 		$this->data = $data['player'];
- 
- 		$this->setting = json_decode($data['setting'], TRUE);
-
-		// side
-		if ($data['user_id'] == Match::$data['user1_id']) {
+		$this->match = $match;
+		$this->math = $math;
+		$this->matchData = $match->getData();
+ 		$this->id = $data['id'];
+ 		// side
+		if ($data['user_id'] == $this->matchData['user1_id']) {
 			$this->side = 'l';
 		} else {
 			$this->side = 'r';
 		}
-
+ 		$this->settings = $data['settings'];
 		// current position
-		$this->setting['pos'] = $this->setting['position'];
+		$this->pos = $this->settings['position'];
 		if ($this->side == 'r') {
-			$this->setting['pos']['x'] = Match::$data['field']['w'] - $this->setting['pos']['x'];
-			$this->setting['pos']['y'] = Match::$data['field']['h'] - $this->setting['pos']['y'];
+			$this->pos['x'] = $this->matchData['field']['width'] - $this->pos['x'];
+			$this->pos['y'] = $this->matchData['field']['height'] - $this->pos['y'];
 		}
-
+		$this->skills = $data['skills'];
 		// values
-		if (Match::$la) {
-			$this->value = Match::$la[$this->id];
-		}
+		$this->val = $val;
+	}
+
+	public function setStopVal($ms)
+	{
+		$this->val = isset($this->valArr[$ms]) ? $this->valArr[$ms] : end($this->valArr);
+		return $this->val;
 	}
 
 	public function do_action()
 	{
-		if (Match::$event) {
-			$this->go_to_event();
+		if ($event = $this->match->getEvent()) {
+			$this->go_to_event($event);
 		} else {
 			$this->logic();
 			$this->go_to();
 		}
 
-		return $this->value;
+		return $this->val;
 	}
 
-	public function go_to()
+	protected function go_to()
 	{
 		// TODO Можно при stop < ms_min делать не "растягивание времени", а пробегание игроком лишнего расстояния.
 
 		$this->valArr = []; // Очищаем от предыдущего
 
-		if (Match::$stop) {
-			$time = min(Match::$stop);
+		$ms_min = $this->match->getMs_min();
+		$ms_max = $this->match->getMs_max();
+		$dt = $this->match->getDt();
+		$stop = $this->match->getStop();
+
+		if ($stop) {
+			$time = min($stop);
 		} else {
-			$time = Match::$ms_max;
+			$time = $ms_max;
 		}
 
-		$x = $this->value['x'];
-		$y = $this->value['y'];
-		$s = $this->value['s'];
-		$d = $this->value['d'];
-		$speed = $this->data['speed'];
-		$acceleration = $this->data['acceleration'];
-		$coordination = $this->data['coordination'];
+		$x = $this->val['x'];
+		$y = $this->val['y'];
+		$s = $this->val['s'];
+		$d = $this->val['d'];
+		$speed = $this->skills['speed'];
+		$acceleration = $this->skills['acceleration'];
+		$coordination = $this->skills['coordination'];
+
+		$maxDist = $ms_max * $speed / 1000;
 
 		if ($this->target) {
 			$tx = $this->target['x'];
@@ -91,13 +121,13 @@ class Player {
 			$ts = isset($this->target['s']) ? $this->target['s'] : NULL;
 			$this->target = NULL;
 		} else {
-			$point = Match::point($x, $y, $d, 100);
+			$point = $this->math->point($x, $y, $d, $maxDist);
 			$tx = $point['x'];
 			$ty = $point['y'];
 			$ts = 0;
 		}
 
-		$dt = Match::$dt;
+		$wasStop = FALSE;
 
 		for ($ms = 0; $ms <= $time; $ms += $dt) {
 			if ($ms) {
@@ -117,10 +147,10 @@ class Player {
 					$ns = $ts;
 				}
 
-				$nd = Match::direction($x, $y, $tx, $ty); // $d === FALSE не может быть
+				$nd = $this->math->direction($x, $y, $tx, $ty); // $d === FALSE не может быть
 
 				// dd - разница направлений
-				$dd = Match::dd($d, $nd);
+				$dd = $this->math->dd($d, $nd);
 
 				if ($dd) {
 					$s_for_dd = abs($coordination * $dt / $dd / 20);
@@ -131,49 +161,61 @@ class Player {
 						} else {
 							$ns = $s_min;
 							$dd_for_s = $coordination * $dt / $ns / 20;
-							$nd = Match::d_norm($d + sign($dd) * $dd_for_s);
+							$nd = $this->math->d_norm($d + $this->math->sign($dd) * $dd_for_s);
 						}
 					}
 				}
 
-				$point = Match::point($x, $y, $nd, $ns / 1000 * $dt);
+				$point = $this->math->point($x, $y, $nd, $ns / 1000 * $dt);
 
 				$x = $point['x'];
 				$y = $point['y'];
 				$d = $nd;
 				$s = round($ns, 2);
 			}
-			$this->valArr[$ms] = $value = [
+			$this->valArr[$ms] = [
 				'x' => $x,
 				'y' => $y,
 				'd' => $d,
 				's' => $s,
 			];
-			if (Match::distance($x, $y, $tx, $ty) < 1) {
-				Match::$stop[] = $ms >= Match::$ms_min ? $ms : Match::$ms_min;
+			if (!$wasStop && $this->math->distance($x, $y, $tx, $ty) < 1) {
+
+/// sss
+
+				$wasStop = TRUE;
+				if ($ms < $ms_min) {
+					$point = $this->math->point($x, $y, $d, $maxDist);
+					$tx = $point['x'];
+					$ty = $point['y'];
+					$ts = $s;
+				}
+			}
+			if ($wasStop && $ms >= $ms_min) {
+				$this->match->addStop($ms);
 				break;
 			}
 			if ($s == 0 && $ts === 0) {
 				break;
 			}
 		}
-		$this->value = $value;
+		$this->val = end($this->valArr);
 	}
 
-	public function go_to_event()
+	protected function go_to_event($event)
 	{
-		switch (Match::$event['name']) {
+		switch ($event['name']) {
 			case 'first_half':
 				if ($this->side == 'l') {
 					$d = 0;
-					$x = $this->setting['pos']['x'] / 2;
+					$x = $this->pos['x'] / 2;
 				} else {
 					$d = 180;
-					$x = $this->setting['pos']['x'] + (Match::$data['field']['w'] - $this->setting['pos']['x']) / 2;
+					$x = $this->pos['x'] + ($this->matchData['field']['width'] - $this->pos['x']) / 2;
 				}
-				$this->value = [
+				$this->val = [
 					'x' => $x,
-					'y' => $this->setting['pos']['y'],
+					'y' => $this->pos['y'],
 					'd' => $d,
 					's' => 0,
 				];
@@ -183,7 +225,7 @@ class Player {
 	}
 
 	// Ближайший игрок своей команды
-	public function nearest_player()
+	protected function nearest_player()
 	{
 		$x = $this->value['x'];
 		$y = $this->value['y'];
@@ -201,7 +243,7 @@ class Player {
 		return $players[0];
 	}
 
-	public function ballToPlayer($px, $py, $bx, $by, $ps, $bs, $pd)
+	protected function ballToPlayer($px, $py, $bx, $by, $ps, $bs, $pd)
 	{
 		$di = Match::$di; // расстояние взаимодействия
 		$dt = 10; // ms
@@ -221,7 +263,7 @@ class Player {
 		}
 	}
 
-	public function playerToBall($px, $py, $bx, $by, $ps, $bs, $bd) // TODO Переделать
+	protected function playerToBall($px, $py, $bx, $by, $ps, $bs, $bd) // TODO Переделать
 	{
 		$di = Match::$di; // расстояние взаимодействия
 		$dt = 10; // ms
@@ -243,7 +285,7 @@ class Player {
 	}
 
 	// Пас в ноги, если $passOnGo == FALSE
-	public function pass($id, $power = NULL, $passOnGo = FALSE)
+	protected function pass($id, $power = NULL, $passOnGo = FALSE)
 	{
 		$accuracy = $this->data['accuracy'];
 		$vision = $this->data['vision'];
@@ -300,18 +342,18 @@ class Player {
 
 	// Пас на ход
 	// (Пас в точку, куда попадет игрок двигаясь в текущем направлении со своей максимальной скоростью)
-	public function passOnGo($id, $power = NULL)
+	protected function passOnGo($id, $power = NULL)
 	{
 		$this->pass($id, $power, TRUE);
 	}
 
-	public function kick($x, $y, $power = NULL)
+	protected function kick($x, $y, $power = NULL)
 	{
 
 	}
 
 	// Расстояние от игрока до точки
-	public function get_distance($tx, $ty)
+	protected function get_distance($tx, $ty)
 	{
 		$x = $this->value['x'];
 		$y = $this->value['y'];
@@ -319,7 +361,7 @@ class Player {
 		return Match::distance($x, $y, $tx, $ty);
 	}
 
-	public function correct_skill($name, $value)
+	protected function correct_skill($name, $value)
 	{
 		$value_max = $this->data[$name];
 		if ($value === NULL || $value > $value_max) {
@@ -331,7 +373,7 @@ class Player {
 		return $value;
 	}
 
-	public function toBall($speed = NULL) // TODO Переделать
+	protected function toBall($speed = NULL) // TODO Переделать
 	{
 		$ball = Match::$la[0];
 		if ($speed = $this->correct_skill('speed', $speed)) {
@@ -341,8 +383,12 @@ class Player {
 		}
 	}
 
-	public function logic()
+	protected function logic()
 	{
+
+		$this->target = (object)['x' => 100, 'y' => 263];
+		return;
+
 		$x = $this->value['x'];
 		$y = $this->value['y'];
 
