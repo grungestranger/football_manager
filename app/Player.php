@@ -46,28 +46,33 @@ class Player {
 	protected $target;
 
 
-	public function __construct(\stdClass $data, $val, Match $match, Math $math)
+	public function __construct(array $data, Match $match, Math $math)
 	{
 		$this->match = $match;
 		$this->math = $math;
 		$this->matchData = $match->getData();
- 		$this->id = $data['id'];
- 		// side
+		$this->id = $data['id'];
+
+		// side
 		if ($data['user_id'] == $this->matchData['user1_id']) {
 			$this->side = 'l';
 		} else {
 			$this->side = 'r';
 		}
- 		$this->settings = $data['settings'];
+
+		$this->settings = $data['settings'];
+
 		// current position
 		$this->pos = $this->settings['position'];
 		if ($this->side == 'r') {
 			$this->pos['x'] = $this->matchData['field']['width'] - $this->pos['x'];
 			$this->pos['y'] = $this->matchData['field']['height'] - $this->pos['y'];
 		}
+
 		$this->skills = $data['skills'];
+
 		// values
-		$this->val = $val;
+		$this->val = $this->getVal();
 	}
 
 	public function setStopVal($ms)
@@ -76,9 +81,24 @@ class Player {
 		return $this->val;
 	}
 
+	public function getVal()
+	{
+		return $this->match->getPlayerVal($this->id);
+	}
+
+	public function isOnField()
+	{
+		return $this->stats['in_time'] !== NULL && $this->stats['out_time'] === NULL
+			&& $this->stats['red_card_time'] === NULL;
+	}
+
 	public function do_action()
 	{
-		if ($event = $this->match->getEvent()) {
+		$event = $this->match->getEvent();
+		if () {
+			return NULL;
+		}
+		if ($event) {
 			$this->go_to_event($event);
 		} else {
 			$this->logic();
@@ -90,8 +110,6 @@ class Player {
 
 	protected function go_to()
 	{
-		// TODO Можно при stop < ms_min делать не "растягивание времени", а пробегание игроком лишнего расстояния.
-
 		$this->valArr = []; // Очищаем от предыдущего
 
 		$ms_min = $this->match->getMs_min();
@@ -180,19 +198,18 @@ class Player {
 				's' => $s,
 			];
 			if (!$wasStop && $this->math->distance($x, $y, $tx, $ty) < 1) {
-
-/// sss
-
-				$wasStop = TRUE;
-				if ($ms < $ms_min) {
+				$this->match->addStop($ms >= $ms_min ? $ms : $ms_min);
+				if ($s && $ms < $ms_min) {
+					$wasStop = TRUE;
 					$point = $this->math->point($x, $y, $d, $maxDist);
 					$tx = $point['x'];
 					$ty = $point['y'];
 					$ts = $s;
+				} else {
+					break;
 				}
 			}
 			if ($wasStop && $ms >= $ms_min) {
-				$this->match->addStop($ms);
 				break;
 			}
 			if ($s == 0 && $ts === 0) {
@@ -221,7 +238,6 @@ class Player {
 				];
 				break;
 		}
-		// считаем, что все значения правильно округлены, либо округляем тут
 	}
 
 	// Ближайший игрок своей команды
@@ -386,7 +402,7 @@ class Player {
 	protected function logic()
 	{
 
-		$this->target = (object)['x' => 100, 'y' => 263];
+		$this->target = ['x' => 200, 'y' => 120];
 		return;
 
 		$x = $this->value['x'];

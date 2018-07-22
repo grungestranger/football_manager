@@ -21,10 +21,10 @@ class MatchController extends Controller
     public function index()
     {
         $user = auth()->user();
-/*
+
 $matchHandler = new MatchHandler($user->match);
 $matchHandler->create();
-*/
+
         if ($match = $user->match) {
             $matchHandler = new MatchHandler($match);
 
@@ -40,7 +40,7 @@ $matchHandler->create();
                 'action' => $matchHandler->getAction(),
                 'time' => $matchHandler->getTime(),
 
-                //'action' => json_encode($matchHandler->exec()),
+                'action' => json_encode($matchHandler->exec()),
             ];
 
             return view('team', $data);

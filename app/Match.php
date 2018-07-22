@@ -19,8 +19,14 @@ class Match {
     // Команды
     protected $teams;
 
-    // last action
-    protected $la;
+    //
+    protected $players = [];
+
+    //
+    protected $playersOnField = [];
+
+    //
+    protected $values;
 
     // Действие на мяч
     protected $ballActions = [];
@@ -31,13 +37,10 @@ class Match {
     // Событие
     protected $event;
 
-    // Приблизительный промежуток времени между запросами к серверу (сек.)
-    protected $query_period = 10;
+    // Приблизительный промежуток времени выполнения одного расчета (сек.)
+    protected $period = 10;
 
     // Милисекунд на итерацию минимум
-    // Тут может быть 2 типа влияния
-    // 1. Растягивание времени [у игроков]
-    // 2. Невозможность пройти расстояние, соответствующее меньшему времени [у мяча]
     protected $ms_min = 10; // должно быть кратно $dt
 
     // dt (ms) в циклах перемещения
@@ -59,33 +62,35 @@ class Match {
     protected $playerLastTouchedBall;
 
     //
-    public function __construct($data, $teams, $la, $time)
+    public function __construct($data, $teams, $values, $time)
     {
         $this->data = $data;
 
-        $this->la = $la;
+        $this->values = $values;
 
         $math = new Math();
 
-        //$this->$ball = new Ball($this->getBallVal(), $this, $math);
+        //$this->$ball = new Ball($this, $math);
 
-        foreach ($players as $item) {
-            if ($item->settings->position != NULL) {
-                $this->players[$item->id] = new Player($item, $this->getPlayerVal($item->id), $this, $math);
+        foreach ($teams as $team) {
+            foreach ($team['players'] as $item) {
+                $this->players[$item['id']] = new Player($item, $this, $math);
             }
         }
+
+        $this->teams = $teams;
     }
 
     //
     public function getPlayerVal($id)
     {
-        return $this->la ? $this->la[$id] : NULL;
+        return $this->values ? $this->values[$id] : NULL;
     }
 
     //
     public function getBallVal()
     {
-        return $this->la ? $this->la[0] : NULL;
+        return $this->values ? $this->values[0] : NULL;
     }
 
     //
@@ -135,18 +140,20 @@ class Match {
     {
         $actions = [];
 
-        if (!$this->la) {
+        if ($this->time == 0) {
             $this->event = ['name' => 'first_half'];
         }
 
-        $qpms = $this->query_period * 1000; // query period ms
+        $period = $this->period * 1000; // period ms
         $time = 0;
-        while ($time < $qpms) {
+        while ($time < $period) {
             $la = [[]];
 
             // Действия игроков
             foreach ($this->players as $k => $v) {
-                $la[0][$k] = $v->do_action();
+                if ($act = $v->do_action()) {
+                    $la[0][$k] = $act;
+                }
             }
 
             // Действие мяча
@@ -156,7 +163,9 @@ class Match {
                 $ms = min($this->stop);
 
                 foreach ($this->players as $k => $v) {
-                    $la[0][$k] = $v->setStopVal($ms);
+                    if (isset($la[0][$k])) {
+                        $la[0][$k] = $v->setStopVal($ms);
+                    }
                 }
 
                 $this->stop = [];
@@ -165,12 +174,12 @@ class Match {
             }
 
             $this->event = NULL;
-            $this->la = $la[0];
+            $this->values = $la[0];
             $time += $la[1] = $ms;
 
-            if ($time < $qpms) {
+            if ($time < $period) {
                 foreach ($la[0] as &$item) {
-                    $item = [round($item->x), round($item->y)];
+                    $item = [round($item['x']), round($item['y'])];
                 }
                 unset($item);
             }
@@ -180,103 +189,7 @@ class Match {
 
         return $actions;
     }
-
-    // Тест траектории
-    public function test1()
-    {
-        $start = microtime(true);
-
-        $request = request();
-
-        $tx = $request->input('tx', 500);
-        $ty = $request->input('ty', 300);
-        $ts = $request->input('ts', 100);
-
-        $x = $request->input('x', 0);
-        $y = $request->input('y', 0);
-        $s = $request->input('s', 0);
-        $d = $request->input('d', 90);
-
-        $speed = $request->input('speed', 100);
-        $acceleration = $request->input('acceleration', 100);
-        $coordination = $request->input('coordination', 100);
-
-        $time = $request->input('time', 1000);
-
-        echo '<form action="?">';
-        echo '<input type="text" name="x" value="'.$x.'"> - x<br>';
-        echo '<input type="text" name="y" value="'.$y.'"> - y<br>';
-        echo '<input type="text" name="s" value="'.$s.'"> - s<br>';
-        echo '<input type="text" name="d" value="'.$d.'"> - d<br>';
-        echo '<input type="text" name="speed" value="'.$speed.'"> - speed<br>';
-        echo '<input type="text" name="acceleration" value="'.$acceleration.'"> - acceleration<br>';
-        echo '<input type="text" name="coordination" value="'.$coordination.'"> - coordination<br>';
-        echo '<input type="text" name="tx" value="'.$tx.'"> - tx<br>';
-        echo '<input type="text" name="ty" value="'.$ty.'"> - ty<br>';
-        echo '<input type="text" name="ts" value="'.$ts.'"> - ts<br>';
-        echo '<input type="text" name="time" value="'.$time.'"> - time<br>';
-        echo '<input type="submit">';
-        echo '</form>';
-
-        Match::$ms_max = $time;
-
-        $players = $this->get_players();
-        $player = new Player($players[0]);
-        $player->data['speed'] = $speed;
-        $player->data['acceleration'] = $acceleration;
-        $player->data['coordination'] = $coordination;
-        $player->value = [
-            'x' => $x,
-            'y' => $y,
-            's' => $s,
-            'd' => $d,
-        ];
-
-        $player->target = [
-            'x' => $tx,
-            'y' => $ty,
-            's' => $ts,
-        ];
-        $player->go_to();
-        echo '<div style="float: left; position: relative; width: 1000px; height: 600px; border-left: 1px solid black; border-bottom: 1px solid black;">';
-        foreach ($player->valArr as $k => $v) {
-            echo '<div style="position: absolute; left: '.$v['x'].'px; bottom: '.$v['y'].'px">.</div>';
-        }
-        echo '<div style="color: red; position: absolute; left: '.$tx.'px; bottom: '.$ty.'px">x</div>';
-        echo '</div>';
-        echo '<div style="width: 500px; height: 600px; overflow: scroll;">';
-        echo '<table border="1" style="width: 100%; border-collapse: collapse;">';
-        echo '<tr><th>MS</th><th>X</th><th>Y</th><th>S</th><th>D</th></tr>';
-        foreach ($player->valArr as $k => $v) {
-            echo '<tr><td>'.$k.'</td><td>'.$v['x'].'</td><td>'.$v['y'].'</td><td>'.$v['s'].'</td><td>'.$v['d'].'</td></tr>';
-        }
-        echo '</table>';
-        echo '</div>';
-
-        if (Match::$stop) {
-            echo '<div style="position: absolute; top: 0px; left: 600px;">Stop - '.Match::$stop[0].' ms</div>';
-        }
-
-        echo '<div style="position: absolute; top: 0px; left: 1200px;">'.round(microtime(true) - $start, 3).' sec</div>';
-        exit;
-    }
-
-    // Позиции игроков
-    public function test2()
-    {
-        $players = request()->input('players', NULL);
-        if (is_array($players)) {
-            foreach ($players as $k => $v) {
-                \DB::table('stats')
-                    ->where('player_id', $k)
-                    ->update(['position' => json_encode([['x' => intval($v['x']), 'y' => intval($v['y'])]])]);
-            }
-        }
-    }
-
-    public function index()
-    {
-
+}
 
 /*
         $k = Match::$ball_speed_k;
@@ -325,16 +238,3 @@ class Match {
         //http://www.cleverstudents.ru/equations/cubic_equations.html#Cardano_formula
         //http://ateist.spb.ru/mw/alg4.htm
 */
-
-
-
-
-        $players = $this->get_players();
-
-        $data = [
-            'players' => $players
-        ];
-
-        return view('match', $data);
-    }
-}

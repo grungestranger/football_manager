@@ -61,12 +61,16 @@ class MatchHandler {
     	$res = [];
 
     	foreach ($players as $v) {
+            $stats = [
+                'start' => !!$v->settings->position,
+            ];
+
     		$player = (object)[
     			'id' => $v->id,
                 'user_id' => $v->user_id,
     			'settings' => $v->settings,
     			'roles' => $v->roles,
-    			'stats' => NULL,
+    			'stats' => $stats,
     		];
 
     		unset($v->id, $v->settings, $v->roles, $v->name, $v->user_id);
@@ -127,6 +131,11 @@ class MatchHandler {
     }
 
     public function getAction()
+    {
+        return NULL;
+    }
+
+    public function getTeams()
     {
         return NULL;
     }
