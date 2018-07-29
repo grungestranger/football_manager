@@ -56,13 +56,16 @@ class MatchHandler {
     	Cache::put('match:' . $this->matchModel->id, $data, $this->cacheTime);
     }
 
+    // For create
     protected function convertPlayers(array $players)
     {
     	$res = [];
 
     	foreach ($players as $v) {
             $stats = [
-                'start' => !!$v->settings->position,
+                'in_time' => $v->settings->position ? 0 : NULL,
+                'out_time' => NULL,
+                'red_card_time' => NULL,
             ];
 
     		$player = (object)[
@@ -137,14 +140,14 @@ class MatchHandler {
 
     public function getTeams()
     {
-        return NULL;
+        return $this->getMatchData()->teams;
     }
 
     protected function getMatchData()
     {
-    	if (!($data = Cache::get('match:' . $this->matchModel->id))) {
-    		throw new \Exception('Match data not exists');
-    	}
+        if(!($data = Cache::get('match:' . $this->matchModel->id))) {
+            throw new \Exception('Match data not exists');
+        }
     	return $data;
     }
 

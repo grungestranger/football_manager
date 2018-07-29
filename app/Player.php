@@ -63,13 +63,17 @@ class Player {
 		$this->settings = $data['settings'];
 
 		// current position
-		$this->pos = $this->settings['position'];
-		if ($this->side == 'r') {
-			$this->pos['x'] = $this->matchData['field']['width'] - $this->pos['x'];
-			$this->pos['y'] = $this->matchData['field']['height'] - $this->pos['y'];
+		if ($this->settings['position']) {
+			$this->pos = $this->settings['position'];
+			if ($this->side == 'r') {
+				$this->pos['x'] = $this->matchData['field']['width'] - $this->pos['x'];
+				$this->pos['y'] = $this->matchData['field']['height'] - $this->pos['y'];
+			}
 		}
 
 		$this->skills = $data['skills'];
+
+		$this->stats = $data['stats'];
 
 		// values
 		$this->val = $this->getVal();
@@ -95,7 +99,7 @@ class Player {
 	public function do_action()
 	{
 		$event = $this->match->getEvent();
-		if () {
+		if (!$this->isOnField() && (!$event || !in_array($event['name'], ['first_half']))) {
 			return NULL;
 		}
 		if ($event) {
@@ -223,16 +227,27 @@ class Player {
 	{
 		switch ($event['name']) {
 			case 'first_half':
-				if ($this->side == 'l') {
-					$d = 0;
-					$x = $this->pos['x'] / 2;
+				if ($this->isOnField()) {
+					if ($this->side == 'l') {
+						$d = 0;
+						$x = $this->pos['x'] / 2;
+					} else {
+						$d = 180;
+						$x = $this->pos['x'] + ($this->matchData['field']['width'] - $this->pos['x']) / 2;
+					}
+					$y = $this->pos['y'];
 				} else {
-					$d = 180;
-					$x = $this->pos['x'] + ($this->matchData['field']['width'] - $this->pos['x']) / 2;
+					$d = 90;
+					$y = -10;
+					if ($this->side == 'l') {
+						$x = 0;
+					} else {
+						$x = 1000;
+					}
 				}
 				$this->val = [
 					'x' => $x,
-					'y' => $this->pos['y'],
+					'y' => $y,
 					'd' => $d,
 					's' => 0,
 				];

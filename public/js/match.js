@@ -56,12 +56,8 @@ $(document).ready(function(){
 	}
 
 	$.each(action, function(k, v){
-		console.log(v);
 		$.each(v[0], function(k1, v1){
-			if (!$('#mfp_' + k1).length) {
-				$('#matchField').append('<span id="mfp_'+k1+'">'+k1+'</span>');
-			}
-			$('#mfp_' + k1).animate({
+			$('#matchField > span[data-id="' + k1 + '"]').animate({
 							left: v1[0]+'px',
 							bottom: v1[1]+'px'
 						}, {duration: v[1], easing: 'linear'});

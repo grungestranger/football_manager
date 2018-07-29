@@ -10,6 +10,13 @@
 <div id="matchField">
     @if ($time < 0)
     <div id="matchLoader"><img src="/img/loader.gif"><span>{{ abs($time) }}</span></div>
+    @else
+    <span data-id="0"></span>
+        @foreach ($teams as $team)
+            @foreach ($team->players as $player)
+    <span data-id="{{ $player->id }}">{{ $player->id }}</span>
+            @endforeach
+        @endforeach
     @endif
 </div>
 @endif

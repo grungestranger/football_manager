@@ -174,7 +174,7 @@ class Match {
             }
 
             $this->event = NULL;
-            $this->values = $la[0];
+            $this->values = $la[0]; // TODO - в values хранить все !!!
             $time += $la[1] = $ms;
 
             if ($time < $period) {
