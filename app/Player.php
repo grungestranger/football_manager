@@ -98,11 +98,11 @@ class Player {
 
 	public function do_action()
 	{
-		$event = $this->match->getEvent();
-		if (!$this->isOnField() && (!$event || !in_array($event['name'], ['first_half']))) {
+		if (!$this->isOnField() && !$this->match->isEvent('first_half')) {
 			return NULL;
 		}
-		if ($event) {
+
+		if ($event = $this->selectEvent()) {
 			$this->go_to_event($event);
 		} else {
 			$this->logic();
@@ -110,6 +110,14 @@ class Player {
 		}
 
 		return $this->val;
+	}
+
+	protected function selectEvent()
+	{
+		if ($this->match->isEvent('first_half')) {
+			return ['name' => 'first_half'];
+		}
+		return NULL;
 	}
 
 	protected function go_to()

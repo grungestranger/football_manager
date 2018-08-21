@@ -34,8 +34,8 @@ class Match {
     // Стоп-сигнал
     protected $stop = [];
 
-    // Событие
-    protected $event;
+    // События
+    protected $events = [];
 
     // Приблизительный промежуток времени выполнения одного расчета (сек.)
     protected $period = 10;
@@ -62,7 +62,7 @@ class Match {
     protected $playerLastTouchedBall;
 
     //
-    public function __construct($data, $teams, $values, $time)
+    public function __construct($data, $teams, $values, $time) // Может быть еще и $events
     {
         $this->data = $data;
 
@@ -130,61 +130,83 @@ class Match {
     }
 
     //
-    public function getEvent()
+    public function isEvent(string $name)
     {
-        return $this->event;
+        return isset($this->events[$name]);
+    }
+
+    //
+    public function addEvent(string $name, array $data = [])
+    {
+        return $this->events[$name] = $data;
     }
 
     //
     public function getAction()
     {
-        $actions = [];
+        $actions = [
+            'motions' => [],
+            'events' => [],
+        ];
 
         if ($this->time == 0) {
-            $this->event = ['name' => 'first_half'];
+            $this->addEvent('first_half');
         }
 
         $period = $this->period * 1000; // period ms
         $time = 0;
         while ($time < $period) {
-            $la = [[]];
+            $values = [];
 
             // Действия игроков
             foreach ($this->players as $k => $v) {
                 if ($act = $v->do_action()) {
-                    $la[0][$k] = $act;
+                    $values[$k] = $act;
                 }
             }
 
             // Действие мяча
-            //$la[0][0] = $this->ball->do_action();
+            //$values[0] = $this->ball->do_action();
 
+            // Обработка стоп-сигнала
             if ($this->stop) {
                 $ms = min($this->stop);
 
-                foreach ($this->players as $k => $v) {
-                    if (isset($la[0][$k])) {
-                        $la[0][$k] = $v->setStopVal($ms);
+                foreach ($values as $k => &$v) {
+                    if ($k) {
+                        $v = $this->players[$k]->setStopVal($ms);
                     }
                 }
+                unset($v);
 
                 $this->stop = [];
             } else {
                 $ms = $this->ms_max;
             }
 
-            $this->event = NULL;
-            $this->values = $la[0]; // TODO - в values хранить все !!!
-            $time += $la[1] = $ms;
+            // Обработка событий и очистка тех событий, который можно очистить
+            // Заполнение событий [карточки и т.д.]
+            $this->events = [];
+            $events = [];
+
+            // Заполнение values
+            foreach ($values as $k => $v) {
+                $this->values[$k] = $v;
+            }
+
+            $time += $ms;
 
             if ($time < $period) {
-                foreach ($la[0] as &$item) {
+                foreach ($values as &$item) {
                     $item = [round($item['x']), round($item['y'])];
                 }
                 unset($item);
             }
 
-            $actions[] = $la;
+            $actions['motions'][] = [$ms, $values];
+            if ($events) {
+                $actions['events'][] = [$time, $events];
+            }
         }
 
         return $actions;

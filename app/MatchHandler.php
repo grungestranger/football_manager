@@ -90,7 +90,7 @@ class MatchHandler {
     {
         $matchData = $this->getMatchData();
 
-        $la = $matchData->actions ? end($matchData->actions)[0] : NULL;
+        $values = $matchData->actions ? end($matchData->actions['motions'])[1] : NULL;
 
         $data = [
             'user1_id' => $this->matchModel->user1_id,
@@ -99,9 +99,8 @@ class MatchHandler {
 
         $teams = json_decode(json_encode($matchData->teams), TRUE);
 
-        $match = new Match($data, $teams, $la, $matchData->time);
+        $match = new Match($data, $teams, $values, $matchData->time);
         $action = $match->getAction();
-        //$stats = $match->getStats();
 
         return $action;
 
