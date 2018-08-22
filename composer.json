@@ -9,7 +9,8 @@
         "laravel/framework": "5.2.*",
         "barryvdh/laravel-debugbar": "~2.4",
         "predis/predis": "^1.1",
-        "tymon/jwt-auth": "^0.5.12"
+        "tymon/jwt-auth": "^0.5.12",
+        "doctrine/dbal": "^2.8"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",
