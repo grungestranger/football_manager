@@ -1,5 +1,5 @@
 // socket
-var socket = io.connect('http://localhost:8080');
+var socket = io.connect('http://' + window.location.hostname + ':8080');
 
 socket.on('needToken', function() {
 	$.ajax({  				
