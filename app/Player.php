@@ -52,31 +52,26 @@ class Player {
 		$this->math = $math;
 		$this->matchData = $match->getData();
 		$this->id = $data['id'];
+		$this->settings = $data['settings'];
+		$this->skills = $data['skills'];
+		$this->stats = $data['stats'];
+		$this->val = $this->getVal();
 
-		// side
+		// side - TODO firs, second time
 		if ($data['user_id'] == $this->matchData['user1_id']) {
 			$this->side = 'l';
 		} else {
 			$this->side = 'r';
 		}
 
-		$this->settings = $data['settings'];
-
 		// current position
-		if ($this->settings['position']) {
+		if ($this->isOnField()) {
 			$this->pos = $this->settings['position'];
 			if ($this->side == 'r') {
 				$this->pos['x'] = $this->matchData['field']['width'] - $this->pos['x'];
 				$this->pos['y'] = $this->matchData['field']['height'] - $this->pos['y'];
 			}
 		}
-
-		$this->skills = $data['skills'];
-
-		$this->stats = $data['stats'];
-
-		// values
-		$this->val = $this->getVal();
 	}
 
 	public function setStopVal($ms)
@@ -246,11 +241,12 @@ class Player {
 					$y = $this->pos['y'];
 				} else {
 					$d = 90;
-					$y = -10;
+					$y = -20;
+					$pos = $this->settings['reserveIndex'] * 20;
 					if ($this->side == 'l') {
-						$x = 0;
+						$x = $pos;
 					} else {
-						$x = 1000;
+						$x = $this->matchData['field']['width'] - $pos;
 					}
 				}
 				$this->val = [

@@ -28,7 +28,7 @@ $matchHandler->create();
         if ($match = $user->match) {
             $matchHandler = new MatchHandler($match);
 
-            $team = $matchHandler->getTeam($user);
+            $team = $matchHandler->getTeam($user->id);
 
             $data = [
                 'settings' => $team->settings,
@@ -80,7 +80,7 @@ $matchHandler->create();
             unset($item);
 
             $matchHandler = new MatchHandler($user->match);
-            $matchHandler->saveTeam($user, $players, $request->input('settings'), $settings_id);
+            $matchHandler->saveTeam($user->id, $players, $request->input('settings'), $settings_id);
         }
 
         return response()->json($this->resultData($success, $errors));

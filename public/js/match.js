@@ -55,12 +55,19 @@ $(document).ready(function(){
 		}, 1000);
 	}
 
-	$.each(action, function(k, v){
-		$.each(v[0], function(k1, v1){
-			$('#matchField > span[data-id="' + k1 + '"]').animate({
+	$.each(action.motions, function(k, v){
+		$.each(v[1], function(k1, v1){
+			if (k) {
+				$('#matchField > span[data-id="' + k1 + '"]').animate({
 							left: v1[0]+'px',
 							bottom: v1[1]+'px'
-						}, {duration: v[1], easing: 'linear'});
+						}, {duration: v[0], easing: 'linear'});
+			} else {
+				$('#matchField > span[data-id="' + k1 + '"]').css({
+							left: v1[0]+'px',
+							bottom: v1[1]+'px'
+						});
+			}
 		});
 	});
 /*

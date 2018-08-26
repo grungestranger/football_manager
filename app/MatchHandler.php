@@ -2,7 +2,6 @@
 
 namespace App;
 
-use App\Models\User;
 use App\Models\Player;
 use App\Models\Match as MatchModel;
 use App\Jobs\Match as MatchJob;
@@ -68,16 +67,16 @@ class MatchHandler {
                 'red_card_time' => NULL,
             ];
 
-    		$player = (object)[
-    			'id' => $v->id,
-                'user_id' => $v->user_id,
-    			'settings' => $v->settings,
-    			'roles' => $v->roles,
-    			'stats' => $stats,
-    		];
+            $tmp = ['id', 'name', 'user_id', 'settings', 'roles'];
 
-    		unset($v->id, $v->settings, $v->roles, $v->name, $v->user_id);
+            $player = new \stdClass();
 
+            foreach ($tmp as $item) {
+                $player->{$item} = $v->{$item};
+                unset($v->{$item});
+            }
+
+            $player->stats = $stats;
     		$player->skills = $v;
 
     		$res[] = $player;
@@ -124,6 +123,11 @@ class MatchHandler {
         dispatch($job);*/
     }
 
+    public function getData(int $user_id)
+    {
+
+    }
+
     public function getTime()
     {
     	return $this->time !== NULL ? $this->time
@@ -150,9 +154,9 @@ class MatchHandler {
     	return $data;
     }
 
-    public function getTeam(User $user)
+    public function getTeam(int $user_id)
     {
-    	$team = $this->getMatchData()->teams[$user->id];
+    	$team = $this->getMatchData()->teams[$user_id];
 
     	$team->settings = (object)[
             'id' => $team->settings_id,
@@ -162,15 +166,8 @@ class MatchHandler {
     	$players = [];
 
     	foreach ($team->players as $v) {
-    		$player = $v->skills;
-    		$player->roles = $v->roles;
-    		$player->settings = $v->settings;
-    		$player->id = $v->id;
-    		$player->user_id = $user->id;
-    		if (!($userPlayer = $user->players->where('id', $v->id)->first())) {
-    			throw new \Exception('Player not exists');
-    		}
-    		$player->name = $userPlayer->name;
+            $player = (object)array_merge((array)$v, (array)$v->skills);
+            unset($player->skills);
 
     		$players[] = $player;
     	}
@@ -180,11 +177,11 @@ class MatchHandler {
     	return $team;
     }
 
-    public function saveTeam(User $user, array $players, array $settings, $settings_id)
+    public function saveTeam(int $user_id, array $players, array $settings, $settings_id)
     {
         $data = $this->getMatchData();
 
-        $team = $data->teams[$user->id];
+        $team = $data->teams[$user_id];
 
         foreach ($team->players as $v) {
             $v->settings = (object)$players[$v->id];
@@ -192,6 +189,8 @@ class MatchHandler {
 
         $team->settings = (object)$settings;
         $team->settings_id = $settings_id;
+
+        // TODO to stats
 
         Cache::put('match:' . $this->matchModel->id, $data, $this->cacheTime);
     }
