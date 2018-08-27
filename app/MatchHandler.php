@@ -37,6 +37,7 @@ class MatchHandler {
     		'time' => 0,
     		'teams' => [],
             'actions' => NULL,
+            'prevValues' => NULL,
     	];
 
     	foreach ([1, 2] as $v) {
@@ -125,13 +126,49 @@ class MatchHandler {
 
     public function getData(int $user_id)
     {
+        $data = $this->getMatchData();
 
+        $team = $data->teams[$user_id];
+
+        $settings = (object)[
+            'id' => $team->settings_id,
+            'settings' => $team->settings,
+        ];
+
+        if ($data->actions) {
+            $prevValues = $data->prevValues ?: $data->actions['motions'][0][1];
+
+            $motions = $data->actions['motions'];
+
+            $t = 0;
+            foreach ($motions as $item) {
+                $t += $item[0];
+            }
+            $dt = $this->time - $data->time + $t;
+
+            $t = 0;
+            foreach ($motions as $k => $v) {
+                $t += $v[0];
+                if ($t > $dt) {
+                    $key = $k;
+                    break;
+                }
+            }
+
+            if ($key) {
+                foreach ($motions[$key - 1] as $k => $v) {
+                    $prevValues[$k] = $v;
+                }
+                $motions = array_slice($motions, $key);
+            }
+
+            array_unshift($motions, [0, $prevValues]);
+        }
     }
 
-    public function getTime()
+    protected function getTime()
     {
-    	return $this->time !== NULL ? $this->time
-            : Carbon::now()->timestamp
+    	return Carbon::now()->timestamp
             - Carbon::parse($this->matchModel->created_at)->timestamp
             - config('match.preparation_time');
     }
@@ -149,7 +186,7 @@ class MatchHandler {
     protected function getMatchData()
     {
         if(!($data = Cache::get('match:' . $this->matchModel->id))) {
-            throw new \Exception('Match data not exists');
+            throw new \Exception('Match data do not exists');
         }
     	return $data;
     }

@@ -57,17 +57,10 @@ $(document).ready(function(){
 
 	$.each(action.motions, function(k, v){
 		$.each(v[1], function(k1, v1){
-			if (k) {
-				$('#matchField > span[data-id="' + k1 + '"]').animate({
-							left: v1[0]+'px',
-							bottom: v1[1]+'px'
-						}, {duration: v[0], easing: 'linear'});
-			} else {
-				$('#matchField > span[data-id="' + k1 + '"]').css({
-							left: v1[0]+'px',
-							bottom: v1[1]+'px'
-						});
-			}
+			$('#matchField > span[data-id="' + k1 + '"]').animate({
+						left: v1[0]+'px',
+						bottom: v1[1]+'px'
+					}, {duration: v[0], easing: 'linear'});
 		});
 	});
 /*

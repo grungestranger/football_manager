@@ -180,6 +180,8 @@ class Match {
                 unset($v);
 
                 $this->stop = [];
+            } elseif ($this->isEvent('first_half')) {
+                $ms = 0;
             } else {
                 $ms = $this->ms_max;
             }
