@@ -213,6 +213,18 @@ class Match {
 
         return $actions;
     }
+
+    //
+    public function getStats()
+    {
+        $res = [];
+
+        foreach ($this->players as $item) {
+            $res[$item->id] = $item->stats;
+        }
+
+        return $res;
+    }
 }
 
 /*
