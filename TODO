@@ -9,7 +9,6 @@
 
 - App\Models\Player::createTeam - insert-ы в цикле. Можно переделать на insert нескольких строк сразу вне цикла.
 
-- last_settings (id) in users table (open this settings in /team and match control)
 - Players Numbers
 
 - Запись в базу связанных данных - нельзя допускать ошибок mysql - транзакции, блокировки ...
@@ -17,3 +16,5 @@
 - Появление пользователя в табличке на главной странице у всех при подтверждении емейла.
 
 - Роли, имена, фамилии и Все массивы - позиции... в конфиг.
+
+- confirmed - в global scope

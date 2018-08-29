@@ -142,7 +142,7 @@ class Match {
     }
 
     //
-    public function getAction()
+    public function getActions()
     {
         $actions = [
             'motions' => [],
@@ -211,6 +211,8 @@ class Match {
             }
         }
 
+        $this->time += $time;
+
         return $actions;
     }
 
@@ -224,6 +226,18 @@ class Match {
         }
 
         return $res;
+    }
+
+    //
+    public function getValues()
+    {
+        return $this->values;
+    }
+
+    //
+    public function getTime()
+    {
+        return $this->time;
     }
 }
 

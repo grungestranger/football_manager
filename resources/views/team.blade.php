@@ -2,9 +2,9 @@
 
 @section('content')
 @if ($isMatch)
-    @if ($action)
+    @if ($actions)
 <script>
-    var action = {!! $action !!};
+    var actions = {!! $actions !!};
 </script>
     @endif
 <div id="matchField">

@@ -55,7 +55,7 @@ $(document).ready(function(){
 		}, 1000);
 	}
 
-	$.each(action.motions, function(k, v){
+	$.each(actions.motions, function(k, v){
 		$.each(v[1], function(k1, v1){
 			$('#matchField > span[data-id="' + k1 + '"]').animate({
 						left: v1[0]+'px',

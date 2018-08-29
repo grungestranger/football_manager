@@ -28,18 +28,18 @@ $matchHandler->create();
         if ($match = $user->match) {
             $matchHandler = new MatchHandler($match);
 
-            $team = $matchHandler->getTeam($user->id);
+            $mhData = $matchHandler->getData($user->id);
 
             $data = [
-                'settings' => $team->settings,
-                'players' => $team->players,
+                'settings' => $mhData->settings,
+                'players' => $mhData->players,
                 'allSettings' => $user->settings,
                 'options' => Settings::getOptions(),
                 'rolesAreas' => Player::getRolesAreas(),
                 'isMatch' => TRUE,
-                'action' => $matchHandler->getAction(),
-                'time' => $matchHandler->getTime(),
-                'teams' => $matchHandler->getTeams(),
+                'actions' => $mhData->actions,
+                'time' => $mhData->time,
+                'teams' => $mhData->teams,
 
                 'action' => json_encode($matchHandler->exec()),
             ];
