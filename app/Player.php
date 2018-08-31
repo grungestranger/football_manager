@@ -17,7 +17,7 @@ class Player {
  	protected $matchData;
 
  	// ID
- 	public $id;
+ 	protected $id;
  
  	// Сторона (команда)
  	protected $side;
