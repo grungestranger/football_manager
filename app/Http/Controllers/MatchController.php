@@ -21,10 +21,7 @@ class MatchController extends Controller
     public function index()
     {
         $user = auth()->user();
-/*
-$matchHandler = new MatchHandler($user->match);
-$matchHandler->create();
-*/
+
         if ($match = $user->match) {
             $matchHandler = new MatchHandler($match);
 
@@ -37,11 +34,9 @@ $matchHandler->create();
                 'options' => Settings::getOptions(),
                 'rolesAreas' => Player::getRolesAreas(),
                 'isMatch' => TRUE,
-                'actions' => $mhData->actions,
+                'actions' => json_encode($mhData->actions),
                 'time' => $mhData->time,
                 'teams' => $mhData->teams,
-
-                'action' => json_encode($matchHandler->exec()),
             ];
 
             return view('team', $data);

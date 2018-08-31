@@ -14,22 +14,13 @@ class MatchHandler {
 
 	protected $match;
 
-    protected $cacheTime;
-
-    protected $time;
-
     public function __construct(MatchModel $match)
     {
         $this->match = $match;
-        $this->cacheTime = config('match.cache_time');
-        $this->time = $this->getTime();
     }
 
     public function create()
     {
-    	dispatch((new MatchJob($this->match))
-    		->delay(config('match.preparation_time')));
-
     	$data = (object)[
     		'time' => 0,
             'prevTime' => 0,
@@ -52,7 +43,12 @@ class MatchHandler {
     		];
     	}
 
-    	Cache::put('match:' . $this->match->id, $data, $this->cacheTime);
+    	Cache::put('match:' . $this->match->id, $data, config('match.cache_time'));
+
+        dispatch(
+            (new MatchJob($this->match))
+                ->delay(config('match.preparation_time'))
+        );
     }
 
     // For create
@@ -119,32 +115,29 @@ class MatchHandler {
         $data->prevValues = $data->values;
         $data->values = $match->getValues();
 
-        /// Обрезать последний элемент !!!!! !!!!!! !!!!!!
+        Cache::put('match:' . $this->match->id, $data, config('match.cache_time'));
 
-        return $data->actions;
+        foreach ([1, 2] as $v) {
+            $user = $this->match->{'user' . $v};
 
-/*
-        if ($this->match->user1->type == 'man') {
-            Predis::publish('user:' . $this->match->user1_id, json_encode($action));
-        }
-        if ($this->match->user1->type == 'man') {
-            Predis::publish('user:' . $this->match->user1_id, json_encode($action));
-        }
-    /*
-
-        if ($user2->type == 'man') {
-                Predis::publish('user:' . $user2->id, json_encode([
-
+            if ($user->type == 'man' && $user->online) {
+                Predis::publish('user:' . $user->id, json_encode([
+                    'action' => 'matchActions',
+                    'actions' => $data->actions,
                 ]));
             }
+        }
 
-        $job = (new static($this->match))->delay(10);
-
-        dispatch($job);*/
+        // TODO if match not ended ...
+        dispatch(
+            (new MatchJob($this->match))
+                ->delay(floor(($data->time - $data->prevTime) / 1000))
+        );
     }
 
     public function getData(int $user_id)
     {
+        $time = $this->getTime();
         $data = $this->getMatchData();
 
         if ($data->actions) {
@@ -153,7 +146,7 @@ class MatchHandler {
 
             // dt
 
-            $dt = $this->time - $data->prevTime;
+            $dt = $time * 1000 - $data->prevTime;
 
             // motions
 
@@ -233,7 +226,7 @@ class MatchHandler {
         $players = Player::sortPlayers($players);
 
         return (object)[
-            'time' => $this->time,
+            'time' => $time,
             'teams' => $data->teams,
             'actions' => $data->actions,
             'settings' => $settings,
@@ -241,6 +234,7 @@ class MatchHandler {
         ];
     }
 
+    // sec
     protected function getTime()
     {
     	return Carbon::now()->timestamp
@@ -256,22 +250,34 @@ class MatchHandler {
     	return $data;
     }
 
-    public function saveTeam(int $user_id, array $players, array $settings, $settings_id)
+    public function saveTeam(int $user_id, array $playersSettings, array $settings, $settings_id)
     {
         $data = $this->getMatchData();
 
         $team = $data->teams[$user_id];
 
         foreach ($team->players as $v) {
-            $v->settings = (object)$players[$v->id];
+            $pSet = (object)$playersSettings[$v->id];
+
+            // in/out to stats
+            // TODO add match events (in/out) to player goes (away from field / on field)
+            if ($v->settings->position !== NULL && $pSet->position === NULL) {
+                if ($data->time) { // match already start
+                    $v->stats->out_time = $data->time;
+                } else {
+                    $v->stats->in_time = NULL;
+                }
+            } elseif ($v->settings->position === NULL && $pSet->position !== NULL) {
+                $v->stats->in_time = $data->time;
+            }
+
+            $v->settings = $pSet;
         }
 
         $team->settings = (object)$settings;
         $team->settings_id = $settings_id;
 
-        // TODO to stats
-
-        Cache::put('match:' . $this->match->id, $data, $this->cacheTime);
+        Cache::put('match:' . $this->match->id, $data, config('match.cache_time'));
     }
 
 }

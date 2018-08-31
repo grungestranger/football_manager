@@ -65,8 +65,8 @@ class Match {
     public function __construct($data, $teams, $values, $time) // Может быть еще и $events
     {
         $this->data = $data;
-
         $this->values = $values;
+        $this->time = $time;
 
         $math = new Math();
 
@@ -186,6 +186,8 @@ class Match {
                 $ms = $this->ms_max;
             }
 
+            $time += $ms;
+
             // Обработка событий и очистка тех событий, который можно очистить
             // Заполнение событий [карточки и т.д.]
             $this->events = [];
@@ -194,15 +196,7 @@ class Match {
             // Заполнение values
             foreach ($values as $k => $v) {
                 $this->values[$k] = $v;
-            }
-
-            $time += $ms;
-
-            if ($time < $period) {
-                foreach ($values as &$item) {
-                    $item = [round($item['x']), round($item['y'])];
-                }
-                unset($item);
+                $values[$k] = [round($v['x']), round($v['y'])];
             }
 
             $actions['motions'][] = [$ms, $values];
@@ -221,8 +215,8 @@ class Match {
     {
         $res = [];
 
-        foreach ($this->players as $item) {
-            $res[$item->id] = $item->stats;
+        foreach ($this->players as $k => $player) {
+            $res[$k] = $player->getStats();
         }
 
         return $res;

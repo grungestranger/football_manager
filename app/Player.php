@@ -17,7 +17,7 @@ class Player {
  	protected $matchData;
 
  	// ID
- 	protected $id;
+ 	public $id;
  
  	// Сторона (команда)
  	protected $side;
@@ -72,6 +72,11 @@ class Player {
 				$this->pos['y'] = $this->matchData['field']['height'] - $this->pos['y'];
 			}
 		}
+	}
+
+	public function getStats()
+	{
+		return $this->stats;
 	}
 
 	public function setStopVal($ms)
