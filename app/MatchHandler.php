@@ -22,9 +22,9 @@ class MatchHandler {
     public function create()
     {
     	$data = (object)[
-    		'time' => 0,
+            'time' => 0,
             'prevTime' => 0,
-    		'teams' => [],
+            'teams' => [],
             'actions' => NULL,
             'values' => NULL,
             'prevValues' => NULL,
@@ -36,10 +36,40 @@ class MatchHandler {
 			$settings = $user->setting;
 			$players = Player::getTeam($settings->id);
 
+            $playersSettings = $playersData = [];
+
+            foreach ($players as $v) {
+                $stats = (object)[
+                    'in_time' => $v->settings->position ? 0 : NULL,
+                    'out_time' => NULL,
+                    'goals_count' => 0,
+                    'goals_time' => [],
+                    'yellow_cards_count' => 0,
+                    'yellow_cards_time' => [],
+                    'red_card_time' => NULL,
+                ];
+
+                $playersSettings[$v->id] = $v->settings;
+                unset($v->settings);
+
+                $player = new \stdClass();
+
+                foreach (['id', 'name', 'user_id', 'roles'] as $item) {
+                    $player->{$item} = $v->{$item};
+                    unset($v->{$item});
+                }
+
+                $player->stats = $stats;
+                $player->prevStats = $stats;
+                $player->skills = $v;
+
+                $playersData[$player->id] = $player;
+            }
+
+            $this->saveTeam($user->id, $playersSettings, json_decode($settings->text), $settings->id);
+
     		$data->teams[$user->id] = (object)[
-    			'settings' => json_decode($settings->text),
-                'settings_id' => $settings->id,
-    			'players' => $this->convertPlayers($players),
+    			'players' => $playersData,
     		];
     	}
 
@@ -49,41 +79,6 @@ class MatchHandler {
             (new MatchJob($this->match))
                 ->delay(config('match.preparation_time'))
         );
-    }
-
-    // For create
-    protected function convertPlayers(array $players)
-    {
-    	$res = [];
-
-    	foreach ($players as $v) {
-            $stats = (object)[
-                'in_time' => $v->settings->position ? 0 : NULL,
-                'out_time' => NULL,
-                'goals_count' => 0,
-                'goals_time' => [],
-                'yellow_cards_count' => 0,
-                'yellow_cards_time' => [],
-                'red_card_time' => NULL,
-            ];
-
-            $tmp = ['id', 'name', 'user_id', 'settings', 'roles'];
-
-            $player = new \stdClass();
-
-            foreach ($tmp as $item) {
-                $player->{$item} = $v->{$item};
-                unset($v->{$item});
-            }
-
-            $player->stats = $stats;
-            $player->prevStats = $stats;
-    		$player->skills = $v;
-
-    		$res[$player->id] = $player;
-    	}
-
-    	return $res;
     }
 
     public function exec()
@@ -106,7 +101,9 @@ class MatchHandler {
 
         $stats = $match->getStats();
         foreach ($data->teams as $team) {
+            unset($team->settings, $team->settings_id);
             foreach ($team->players as $player) {
+                unset($player->settings);
                 $player->prevStats = $player->stats;
                 $player->stats = (object)$stats[$player->id];
             }
@@ -247,37 +244,30 @@ class MatchHandler {
         if(!($data = Cache::get('match:' . $this->match->id))) {
             throw new \Exception('Match data do not exists');
         }
+
+        foreach ($data->teams as $user_id => $team) {
+            if(!($teamData = Cache::get('match:' . $this->match->id . 'team:' . $user_id))) {
+                throw new \Exception('Match data do not exists');
+            }
+            $team->settings = $teamData->settings;
+            $team->settings_id = $teamData->settings_id;
+            foreach ($team->players as $player) {
+                $player->settings = $teamData->playersSettings->{$player->id};
+            }
+        }
+
     	return $data;
     }
 
-    public function saveTeam(int $user_id, array $playersSettings, array $settings, $settings_id)
+    public function saveTeam(int $user_id, array $playersSettings, $settings, $settings_id)
     {
-        $data = $this->getMatchData();
+        $team = (object)[
+            'playersSettings' => json_decode(json_encode($playersSettings)),
+            'settings' => (object)$settings,
+            'settings_id' => $settings_id,
+        ];
 
-        $team = $data->teams[$user_id];
-
-        foreach ($team->players as $v) {
-            $pSet = (object)$playersSettings[$v->id];
-
-            // in/out to stats
-            // TODO add match events (in/out) to player goes (away from field / on field)
-            if ($v->settings->position !== NULL && $pSet->position === NULL) {
-                if ($data->time) { // match already start
-                    $v->stats->out_time = $data->time;
-                } else {
-                    $v->stats->in_time = NULL;
-                }
-            } elseif ($v->settings->position === NULL && $pSet->position !== NULL) {
-                $v->stats->in_time = $data->time;
-            }
-
-            $v->settings = $pSet;
-        }
-
-        $team->settings = (object)$settings;
-        $team->settings_id = $settings_id;
-
-        Cache::put('match:' . $this->match->id, $data, config('match.cache_time'));
+        Cache::put('match:' . $this->match->id . 'team:' . $user_id, $team, config('match.cache_time'));
     }
 
 }

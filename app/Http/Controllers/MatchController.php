@@ -56,7 +56,8 @@ class MatchController extends Controller
 
         $errors = [];
         if (
-            !is_string($settings_id = $request->input('settings_id'))
+            !$user->match
+            || !is_string($settings_id = $request->input('settings_id'))
             || (
                 $settings_id = $settings_id == 'NULL' ? NULL
                     : ($user->settings()->find($settings_id) ? intval($settings_id) : FALSE)
