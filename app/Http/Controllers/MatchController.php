@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-use App\TeamMatchTrait;
 use App\MatchHandler;
 use App\Models\Player;
 use App\Models\Settings;
@@ -31,7 +30,7 @@ class MatchController extends Controller
                 'settings' => $mhData->settings,
                 'players' => $mhData->players,
                 'allSettings' => $user->settings,
-                'options' => Settings::getOptions(),
+                'options' => config('settings.options'),
                 'rolesAreas' => Player::getRolesAreas(),
                 'isMatch' => TRUE,
                 'actions' => json_encode($mhData->actions),

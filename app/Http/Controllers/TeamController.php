@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-use App\TeamMatchTrait;
 use App\Models\Player;
 use App\Models\Settings;
 use App\Models\PlayersSettings;
@@ -48,7 +47,7 @@ class TeamController extends Controller
         ];
         if (!$request->ajax()) {
             $data['allSettings'] = $user->settings;
-            $data['options'] = Settings::getOptions();
+            $data['options'] = config('settings.options');
             $data['rolesAreas'] = Player::getRolesAreas();
         }
 

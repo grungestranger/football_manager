@@ -21,45 +21,14 @@ class Settings extends Model
     }
 
     /**
-     * options
-     */
-    protected static $options = [
-        'tactic' => [
-            'defence',
-            'balance',
-            'attack',
-        ],
-    ];
-
-    /**
-     * default name
-     */
-    protected static $defaultName = 'Настройки 1';
-
-    /**
-     * default settings
-     */
-    protected static $defaultSettings = [
-    	'tactic' => 'balance',
-    ];
-
-    /**
-     * get options
-     */
-    public static function getOptions()
-    {
-        return self::$options;
-    }
-
-    /**
      * create method default settings
      */
     public static function createDefault($user_id)
     {
         return self::create([
         	'user_id' => $user_id,
-        	'name' => self::$defaultName,
-        	'text' => json_encode(self::$defaultSettings),
+        	'name' => config('settings.defaultName'),
+        	'text' => json_encode(config('settings.defaultSettings')),
         ]);
     }
 
@@ -71,7 +40,7 @@ class Settings extends Model
         if (!is_array($settings)) {
             return FALSE;
         }
-        foreach (self::$options as $k => $v) {
+        foreach (config('settings.options') as $k => $v) {
             if (!isset($settings[$k]) || !in_array($settings[$k], $v)) {
                 return FALSE;
             }

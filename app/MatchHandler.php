@@ -23,7 +23,7 @@ class MatchHandler {
     {
     	$data = (object)[
             'time' => 0,
-            'prevTime' => 0,
+            'prevTime' => Carbon::now()->timestamp + config('match.preparation_time'),
             'teams' => [],
             'actions' => NULL,
             'values' => NULL,
@@ -60,7 +60,7 @@ class MatchHandler {
                 }
 
                 $player->stats = $stats;
-                $player->prevStats = $stats;
+                $player->prevStats = clone $stats;
                 $player->skills = $v;
 
                 $playersData[$player->id] = $player;
@@ -79,6 +79,7 @@ class MatchHandler {
             (new MatchJob($this->match))
                 ->delay(config('match.preparation_time'))
         );
+        \Log::info('create');
     }
 
     public function exec()
@@ -96,7 +97,7 @@ class MatchHandler {
 
         $data->actions = $match->getActions();
 
-        $data->prevTime = $data->time;
+        $data->prevTime = Carbon::now()->timestamp;
         $data->time = $match->getTime();
 
         $stats = $match->getStats();
@@ -128,8 +129,10 @@ class MatchHandler {
         // TODO if match not ended ...
         dispatch(
             (new MatchJob($this->match))
-                ->delay(floor(($data->time - $data->prevTime) / 1000))
+                ->delay(10)
+                //->delay(floor(($data->time - $data->prevTime) / 1000))
         );
+        \Log::info('exec');
     }
 
     public function getData(int $user_id)
